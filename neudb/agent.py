@@ -6,9 +6,10 @@ import os
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from . import ai_schema
+from .database import Database
 
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful assistant.
@@ -28,34 +29,44 @@ def _validate_http_url(url: str, localhost_only: bool = False) -> str:
     return url.rstrip("/")
 
 
+def _post_json(
+    url: str,
+    payload: Dict[str, Any],
+    headers: Dict[str, str],
+    error_prefix: str,
+) -> Dict[str, Any]:
+    """POST a JSON payload with the standard library and decode the response."""
+    data = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:  # nosec B310
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{error_prefix}: {exc}") from exc
+
+
 class OllamaClient:
     """Tiny Ollama chat client using Python's standard library."""
 
-    def __init__(self, model: str = "llama3.2", base_url: str = "http://127.0.0.1:11434", allow_remote: bool = False):
+    def __init__(self, model: str = "llama3.2", base_url: str = "http://127.0.0.1:11434", allow_remote: bool = False) -> None:
         self.model = model
         self.base_url = _validate_http_url(base_url, localhost_only=not allow_remote)
 
     def chat(self, messages: List[Dict[str, str]]) -> str:
         payload = {"model": self.model, "messages": messages, "stream": False}
-        data = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
+        body = _post_json(
             f"{self.base_url}/api/chat",
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
+            payload,
+            {"Content-Type": "application/json"},
+            f"Could not reach Ollama at {self.base_url}",
         )
-        try:
-            with urllib.request.urlopen(request, timeout=120) as response:  # nosec B310
-                body = json.loads(response.read().decode("utf-8"))
-        except urllib.error.URLError as exc:
-            raise RuntimeError(f"Could not reach Ollama at {self.base_url}: {exc}") from exc
         return body.get("message", {}).get("content", "")
 
 
 class OpenAIClient:
     """Minimal OpenAI chat client using Python's standard library."""
 
-    def __init__(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None) -> None:
         self.model = model
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
@@ -63,28 +74,22 @@ class OpenAIClient:
 
     def chat(self, messages: List[Dict[str, str]]) -> str:
         payload = {"model": self.model, "messages": messages}
-        data = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
+        body = _post_json(
             "https://api.openai.com/v1/chat/completions",
-            data=data,
-            headers={
+            payload,
+            {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
             },
-            method="POST",
+            "Could not reach OpenAI",
         )
-        try:
-            with urllib.request.urlopen(request, timeout=120) as response:  # nosec B310
-                body = json.loads(response.read().decode("utf-8"))
-        except urllib.error.URLError as exc:
-            raise RuntimeError(f"Could not reach OpenAI: {exc}") from exc
         return body["choices"][0]["message"]["content"]
 
 
 class MemoryChatAgent:
     """Chat agent that searches neuDB memories before every response."""
 
-    def __init__(self, db, session_id: str, llm_client, top_k: int = 5, system_prompt: str = DEFAULT_SYSTEM_PROMPT):
+    def __init__(self, db: Database, session_id: str, llm_client: Any, top_k: int = 5, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> None:
         self.db = db
         self.session_id = session_id
         self.llm_client = llm_client
@@ -98,11 +103,11 @@ class MemoryChatAgent:
         username: str = "local-user",
         email: str = "local-user@example.com",
         title: str = "Local LLM chat",
-        llm_client=None,
+        llm_client: Any = None,
         provider: str = "ollama",
         model: Optional[str] = None,
         top_k: int = 5,
-    ):
+    ) -> "MemoryChatAgent":
         db = ai_schema.init_ai_database(db_dir)
         user_id = _get_or_create_user(db, username, email)
         session_id = ai_schema.create_session(db, user_id, title, model=model or provider)
@@ -144,7 +149,8 @@ class MemoryChatAgent:
         return answer
 
 
-def create_llm_client(provider: str, model: Optional[str] = None):
+def create_llm_client(provider: str, model: Optional[str] = None) -> Any:
+    """Build an LLM client for the requested provider."""
     if provider == "ollama":
         return OllamaClient(model=model or "llama3.2")
     if provider == "openai":
@@ -152,7 +158,7 @@ def create_llm_client(provider: str, model: Optional[str] = None):
     raise ValueError("provider must be 'ollama' or 'openai'")
 
 
-def _get_or_create_user(db, username: str, email: str) -> str:
+def _get_or_create_user(db: Database, username: str, email: str) -> str:
     users = db.table("users")
     existing = users.select_by("username", username)
     if existing:
@@ -175,7 +181,7 @@ def _format_context(messages: List[dict]) -> str:
     return "\n".join(lines)
 
 
-def run_chat_loop(agent: MemoryChatAgent):
+def run_chat_loop(agent: MemoryChatAgent) -> None:
     print("neuDB agent chat. Type 'exit' or 'quit' to stop.")
     while True:
         try:
@@ -191,7 +197,7 @@ def run_chat_loop(agent: MemoryChatAgent):
         print(f"assistant> {answer}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run a local LLM chat loop with neuDB memory.")
     parser.add_argument("--provider", choices=["ollama", "openai"], default="ollama")
     parser.add_argument("--model", default=None)

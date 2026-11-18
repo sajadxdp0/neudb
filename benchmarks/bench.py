@@ -23,9 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from neudb import connect  # noqa: E402
 
 
-def _pctl(xs: list[float], q: float) -> float:
-    xs = sorted(xs)
-    return xs[min(len(xs) - 1, int(len(xs) * q))]
+def _pctl(values: list[float], quantile: float) -> float:
+    values = sorted(values)
+    return values[min(len(values) - 1, int(len(values) * quantile))]
 
 
 def main() -> None:
@@ -70,14 +70,17 @@ def main() -> None:
 
     # Threaded writes: 4 threads x 100 inserts into one table.
     ttable = db.table("threaded")
+
+    def write_batch() -> None:
+        for _ in range(100):
+            ttable.insert({"x": 1})
+
     t0 = time.monotonic()
-    threads = []
-    for _ in range(4):
-        threads.append(threading.Thread(
-            target=lambda: [ttable.insert({"x": 1}) for _ in range(100)]
-        ))
-    [t.start() for t in threads]
-    [t.join() for t in threads]
+    threads = [threading.Thread(target=write_batch) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
     thread_s = time.monotonic() - t0
     threaded_count = len(ttable.select_all())
 

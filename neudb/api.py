@@ -2,17 +2,18 @@
 
 import hmac
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import ai_schema
+from .config import IDENTIFIER_PATTERN
+from .database import Database
 
 
 DEFAULT_API_DB_DIR = "neudb_api_data"
-IDENTIFIER_PATTERN = r"^[A-Za-z0-9_]+$"
 MAX_TEXT_LENGTH = 20_000
 MAX_VECTOR_DIMENSIONS = 4096
 MAX_TOP_K = 100
@@ -50,8 +51,10 @@ class SearchRequest(BaseModel):
     top_k: int = Field(default=5, ge=1, le=MAX_TOP_K)
 
 
-def _auth_dependency(expected_api_key: Optional[str]):
-    def require_api_key(x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+def _auth_dependency(expected_api_key: Optional[str]) -> Callable[[Optional[str]], None]:
+    """Build the API-key dependency used by the protected routes."""
+
+    def require_api_key(x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")) -> None:
         if not expected_api_key:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -63,11 +66,24 @@ def _auth_dependency(expected_api_key: Optional[str]):
     return require_api_key
 
 
-def _record_by_id(db, table_name: str, record_id: str) -> dict:
+def _record_by_id(db: Database, table_name: str, record_id: str) -> dict:
+    """Fetch a record by id or raise a 404."""
     records = db.table(table_name).select_by("id", record_id)
     if not records:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
     return records[0]
+
+
+def _validate_pagination(limit: int, offset: int) -> None:
+    if limit < 1 or limit > 1000 or offset < 0:
+        raise HTTPException(status_code=400, detail="limit must be 1-1000 and offset must be non-negative.")
+
+
+def _cors_origins_from_env() -> List[str]:
+    configured = os.environ.get(
+        "NEUDB_CORS_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080"
+    )
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
 def create_app(db_dir: Optional[str] = None, api_key: Optional[str] = None) -> FastAPI:
@@ -78,12 +94,9 @@ def create_app(db_dir: Optional[str] = None, api_key: Optional[str] = None) -> F
     db = ai_schema.init_ai_database(db_path)
     app = FastAPI(title="neuDB API", version="0.4.1")
     app.state.db = db
-    cors_origins = [origin.strip() for origin in os.environ.get(
-        "NEUDB_CORS_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080"
-    ).split(",") if origin.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_origins,
+        allow_origins=_cors_origins_from_env(),
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -106,8 +119,7 @@ def create_app(db_dir: Optional[str] = None, api_key: Optional[str] = None) -> F
 
     @app.get("/tables/{table_name}/records", dependencies=[Depends(require_api_key)])
     def list_records(table_name: str, limit: int = 100, offset: int = 0):
-        if limit < 1 or limit > 1000 or offset < 0:
-            raise HTTPException(status_code=400, detail="limit must be 1-1000 and offset must be non-negative.")
+        _validate_pagination(limit, offset)
         records = db.table(table_name).select_all()
         return {"records": records[offset:offset + limit], "total": len(records)}
 

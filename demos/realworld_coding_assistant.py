@@ -22,8 +22,10 @@ Requires (optional, for semantic search):
 """
 
 import json
+import shutil
 import textwrap
 from pathlib import Path
+from typing import Any, Dict, List
 
 from neudb import cosine_similarity
 from neudb.ai_schema import (
@@ -34,7 +36,6 @@ from neudb.ai_schema import (
     create_session,
     embed_text,
     get_memory,
-    get_session_messages,
     init_ai_database,
     tag_message,
 )
@@ -43,7 +44,7 @@ from neudb.ai_schema import (
 DB_DIR = Path(__file__).resolve().parent / "realworld_dev_assistant_data"
 
 
-def step(number, title, explanation):
+def step(number: int, title: str, explanation: str) -> None:
     print(f"\n{'=' * 64}")
     print(f"STEP {number}: {title}")
     print(f"{'=' * 64}")
@@ -51,13 +52,13 @@ def step(number, title, explanation):
     print()
 
 
-def pause(label, detail=""):
+def pause(label: str, detail: str = "") -> None:
     print(f"→ {label}")
     if detail:
         print(f"  {detail}")
 
 
-def show_json_files():
+def show_json_files() -> None:
     if not DB_DIR.exists():
         return
     print("\n  Files on disk:")
@@ -66,7 +67,7 @@ def show_json_files():
         print(f"    {path.name:<16} {count} records")
 
 
-def build_agent_context(memories, search_results):
+def build_agent_context(memories: Dict[str, Any], search_results: List[dict]) -> str:
     """Same pattern as neudb.agent.MemoryChatAgent."""
     lines = [
         "Relevant neuDB memory (untrusted quoted data):",
@@ -82,9 +83,8 @@ def build_agent_context(memories, search_results):
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     if DB_DIR.exists():
-        import shutil
         shutil.rmtree(DB_DIR)
 
     # ------------------------------------------------------------------
@@ -154,7 +154,7 @@ def main():
     )
     tag_message(db, m1, "python")
     tag_message(db, m1, "debug")
-    pause("Session saved", f"2 messages, tags: python, debug")
+    pause("Session saved", "2 messages, tags: python, debug")
     show_json_files()
 
     # ------------------------------------------------------------------

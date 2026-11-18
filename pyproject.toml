@@ -32,11 +32,11 @@ embeddings = ["sentence-transformers>=2.0"]
 test = ["fastapi>=0.110", "httpx>=0.27", "pytest>=8.0"]
 
 [project.urls]
-Homepage = "https://github.com/sajadxdp/neudb"
-Documentation = "https://github.com/sajadxdp/neudb#readme"
-Repository = "https://github.com/sajadxdp/neudb"
-Changelog = "https://github.com/sajadxdp/neudb/blob/main/CHANGELOG.md"
-Issues = "https://github.com/sajadxdp/neudb/issues"
+Homepage = "https://github.com/sajadxdp0/neudb"
+Documentation = "https://github.com/sajadxdp0/neudb#readme"
+Repository = "https://github.com/sajadxdp0/neudb"
+Changelog = "https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md"
+Issues = "https://github.com/sajadxdp0/neudb/issues"
 
 [project.scripts]
 neudb = "neudb:main"
