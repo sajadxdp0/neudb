@@ -48,7 +48,12 @@ def _post_json(
 class OllamaClient:
     """Tiny Ollama chat client using Python's standard library."""
 
-    def __init__(self, model: str = "llama3.2", base_url: str = "http://127.0.0.1:11434", allow_remote: bool = False) -> None:
+    def __init__(
+        self,
+        model: str = "llama3.2",
+        base_url: str = "http://127.0.0.1:11434",
+        allow_remote: bool = False,
+    ) -> None:
         self.model = model
         self.base_url = _validate_http_url(base_url, localhost_only=not allow_remote)
 
@@ -89,7 +94,14 @@ class OpenAIClient:
 class MemoryChatAgent:
     """Chat agent that searches neuDB memories before every response."""
 
-    def __init__(self, db: Database, session_id: str, llm_client: Any, top_k: int = 5, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> None:
+    def __init__(
+        self,
+        db: Database,
+        session_id: str,
+        llm_client: Any,
+        top_k: int = 5,
+        system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+    ) -> None:
         self.db = db
         self.session_id = session_id
         self.llm_client = llm_client
