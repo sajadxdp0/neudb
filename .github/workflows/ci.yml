@@ -78,21 +78,11 @@ jobs:
       - name: Import wheel with no optional dependencies
         working-directory: ${{ runner.temp }}
         run: |
-          "$RUNNER_TEMP/wheel-smoke/bin/python" - <<'PY'
-          from importlib.metadata import distribution
-
-          requirements = distribution("neudb").requires or []
-          core_requirements = [item for item in requirements if "extra ==" not in item]
-          assert core_requirements == [], f"Core must have no dependencies: {core_requirements}"
-          import neudb
-
-          assert callable(neudb.connect)
-          assert neudb.__version__ == "0.5.0"
-          print(f"Core import OK: neuDB {neudb.__version__}")
-          PY
+          "$RUNNER_TEMP/wheel-smoke/bin/python" -c 'from importlib.metadata import distribution; import neudb; requirements = distribution("neudb").requires or []; core = [item for item in requirements if "extra ==" not in item]; assert core == [], core; assert callable(neudb.connect); assert neudb.__version__ == "0.5.0"; print(f"Core import OK: neuDB {neudb.__version__}")'
       - name: Check installed CLI entry point
         working-directory: ${{ runner.temp }}
-        run: "$RUNNER_TEMP/wheel-smoke/bin/neudb" --help
+        run: |
+          "$RUNNER_TEMP/wheel-smoke/bin/neudb" --help
 
   package:
     name: Build sdist and wheel

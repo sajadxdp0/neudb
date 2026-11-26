@@ -33,15 +33,7 @@ jobs:
       - name: Build distributions
         run: uv build
       - name: Verify tag matches package version
-        run: |
-          uv run --locked --extra dev python - <<'PY'
-          import os
-          from neudb import __version__
-
-          tag = os.environ["GITHUB_REF_NAME"].removeprefix("v")
-          if tag != __version__:
-              raise SystemExit(f"Tag {tag!r} does not match package version {__version__!r}")
-          PY
+        run: uv run --locked --extra dev python -c 'import os; from neudb import __version__; tag = os.environ["GITHUB_REF_NAME"].removeprefix("v"); assert tag == __version__, f"Tag {tag!r} does not match package version {__version__!r}"; print(f"Release tag matches neuDB {__version__}")'
       - name: Audit release dependencies
         run: uv run --locked --extra dev pip-audit
       - name: Generate build provenance
