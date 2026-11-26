@@ -40,13 +40,18 @@ jobs:
         id: attest
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/*
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
       - name: Stage provenance bundle
         run: cp "${{ steps.attest.outputs.bundle-path }}" dist/attestation.jsonl
       - name: Attach distributions to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/attestation.jsonl
           fail_on_unmatched_files: true
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
