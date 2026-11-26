@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>neuDB Dashboard</title>
+  <meta name="description" content="Local-only browser dashboard for a neuDB API.">
+  <title>neuDB Local Dashboard</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/dashboard.css">
 </head>
@@ -16,16 +17,19 @@
 
   <div class="shell">
     <aside class="sidebar">
-      <div class="sidebar-heading"><span>Tables</span><button id="new-table" class="icon-button" title="Create table">＋</button></div>
+      <div class="sidebar-heading"><span>Tables</span><button id="new-table" class="icon-button" title="Create table" aria-label="Create table">＋</button></div>
       <div id="table-list" class="table-list"><p class="muted">Connect to load tables.</p></div>
-      <div class="sidebar-help"><strong>Everything is local.</strong><br>Records are stored as readable JSON files in your database folder.</div>
+      <div class="sidebar-help"><strong>Everything is local.</strong><br>Records are readable JSON files in your database directory. The API supports one process only.</div>
     </aside>
 
     <main class="content">
+      <p class="local-warning" role="note"><strong>Local use only.</strong> This page sends your API key to the local URL you enter. Serve the dashboard locally over HTTP: an HTTPS page, including GitHub Pages, may be blocked from reaching localhost by mixed-content or Private Network Access rules. The API's CORS allow-list must include the dashboard's exact origin.</p>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
       <section id="welcome" class="welcome">
-        <div class="welcome-mark">n<span>•</span></div>
+        <img class="welcome-mark" src="assets/icon.svg" alt="" width="72" height="72">
         <h1>Your data, without the friction.</h1>
-        <p>Connect to a neuDB API, choose a table, and manage records with a friendly interface.</p>
+        <p>Connect to a neuDB API on localhost, choose a table, and manage records with a friendly interface.</p>
         <button id="open-connection" class="button primary">Connect database</button>
       </section>
 
@@ -35,31 +39,44 @@
           <button id="add-record" class="button primary">＋ Add record</button>
         </div>
         <div class="toolbar">
-          <label class="search"><span>⌕</span><input id="record-search" placeholder="Filter records…" autocomplete="off"></label>
+          <label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">Filter records on this page</span><input id="record-search" placeholder="Filter this page…" autocomplete="off"></label>
           <button id="refresh" class="button secondary">Refresh</button>
         </div>
-        <div id="notice" class="notice" hidden></div>
-        <div class="table-wrap"><table><thead id="records-head"></thead><tbody id="records-body"></tbody></table><div id="empty-state" class="empty" hidden>No records yet. Add the first one.</div></div>
+        <nav class="pagination" aria-label="Record pages">
+          <button id="previous-page" class="button secondary" disabled>Previous</button>
+          <span id="pagination-status" class="muted" aria-live="polite"></span>
+          <button id="next-page" class="button secondary" disabled>Next</button>
+        </nav>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only" id="records-caption">Records in the selected table</caption>
+            <thead id="records-head"></thead>
+            <tbody id="records-body"></tbody>
+          </table>
+          <div id="empty-state" class="empty" hidden>No records on this page.</div>
+        </div>
       </section>
     </main>
   </div>
 
-  <dialog id="connection-dialog">
+  <dialog id="connection-dialog" aria-labelledby="connection-title">
     <form method="dialog" id="connection-form" class="dialog-card">
-      <button type="button" class="dialog-close" data-close>×</button>
-      <p class="eyebrow">CONNECTION</p><h2>Connect to neuDB</h2>
-      <p class="muted">Run <code>uvicorn neudb.api:app --reload</code> locally, then enter its details.</p>
-      <label>API URL<input id="api-url" value="http://127.0.0.1:8000" required></label>
-      <label>API key<input id="api-key" type="password" placeholder="Your NEUDB_API_KEY" required></label>
+      <button type="button" class="dialog-close" data-close aria-label="Close connection dialog">×</button>
+      <p class="eyebrow">CONNECTION</p><h2 id="connection-title">Connect to neuDB</h2>
+      <p class="muted">Run one local API process with <code>uvicorn neudb.api:app --host 127.0.0.1 --port 8000</code>. Do not use <code>--reload</code> or multiple workers.</p>
+      <p class="dialog-warning">Only localhost URLs are accepted. Your key is kept in this tab's session storage and sent to the URL below.</p>
+      <label>API URL<input id="api-url" type="url" value="http://127.0.0.1:8000" required></label>
+      <label>API key<input id="api-key" type="password" placeholder="Your NEUDB_API_KEY" autocomplete="off" required></label>
       <div class="dialog-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button primary">Connect</button></div>
     </form>
   </dialog>
 
-  <dialog id="record-dialog">
+  <dialog id="record-dialog" aria-labelledby="record-dialog-title">
     <form method="dialog" id="record-form" class="dialog-card wide">
-      <button type="button" class="dialog-close" data-close>×</button>
+      <button type="button" class="dialog-close" data-close aria-label="Close record dialog">×</button>
       <p class="eyebrow" id="record-mode">NEW RECORD</p><h2 id="record-dialog-title">Add record</h2>
-      <p class="muted">Enter a JSON object. The <code>id</code> is generated automatically.</p>
+      <p class="muted">Enter a strict JSON object. The <code>id</code> is generated automatically and cannot be changed.</p>
+      <label class="sr-only" for="record-json">Record JSON</label>
       <textarea id="record-json" spellcheck="false" required>{
   "content": ""
 }</textarea>

@@ -1,11 +1,28 @@
 # Changelog
 
-## [Unreleased]
+## [0.5.0] - 2026-11-26
 
 ### Added
-- Product website (`website/`) with xAI-inspired landing page
-- Brand assets (`docs/brand/`) — logo, icon, wordmark
-- Project documentation index (`docs/README.md`)
+- Structured argparse CLI with `--db`, JSON output, pagination, record get/update, text search, and explicit table-drop confirmation.
+- Atomic `Table.insert_many()` and `Table.upsert()` operations, `Table.get()`/`count()`, and boolean mutation results.
+- Streamed API request-body limits, `/ready`, paginated session messages, typed request models, and stable 4xx/5xx responses.
+- User-scoped agent retrieval, atomic chat-exchange persistence, bounded provider responses, and redirect/proxy hardening.
+- Typed package marker, dynamic version metadata, Python 3.11–3.14 CI matrix, reproducible benchmarks, security/contribution docs, and non-root container tooling.
+- Unified light/dark logo family, social card, source-first README, and corrected product documentation/website.
+
+### Changed
+- **BREAKING:** Minimum Python version is now 3.11.
+- **BREAKING:** Records must be strict JSON values with non-empty string IDs matching their table keys; IDs are immutable.
+- **BREAKING:** `Database.create_table()` is silent and returns a boolean; `Table.update()`/`delete()` return booleans.
+- CLI record lists use JSON Lines by default; `--json` emits a single JSON document.
+- Writes fsync the parent directory on supporting POSIX filesystems; API and agent extras declare bounded dependency ranges.
+
+### Fixed
+- Closed same-process table-creation and temp-sweep races.
+- Prevented malformed records, non-finite values, circular references, and excessive nesting from corrupting table invariants.
+- Prevented invalid API identifiers, oversized chunked bodies, non-finite vectors, and ID-changing patches from becoming server errors.
+- Prevented cross-user agent-memory retrieval and provider credential forwarding through redirects or ambient proxies.
+- Corrected stale installation, API, environment, branding, and performance documentation.
 
 ## [0.4.1] - 2026-07-02
 ### Security

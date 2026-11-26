@@ -1,0 +1,42 @@
+# Before the first start on Linux, create a host directory writable by the
+# container user: mkdir -p data && sudo chown 10001:10001 data
+services:
+  api:
+    build: .
+    image: neudb:local
+    init: true
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # The host ./data directory is mounted here and remains owned by uid 10001.
+      NEUDB_API_DB: /data
+    ports:
+      # Keep the API on loopback. Do not expose this port directly to the internet.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3).read()"
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      # neuDB's file-backed API is supported as one process; do not scale this service.
+      replicas: 1
+
+# Copy .env.example to .env and set a long random NEUDB_API_KEY before starting.
+# For access beyond this machine, use a trusted reverse proxy with TLS. Restrict
+# accepted Host values at the proxy, forward the X-API-Key header, and configure
+# NEUDB_CORS_ORIGINS for the exact browser origin. Never publish port 8000 broadly.
+# The API is a single-process local service, not a server database or public API.

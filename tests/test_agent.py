@@ -1,3 +1,4 @@
+import pytest
 from neudb import ai_schema
 from neudb.agent import MemoryChatAgent, OllamaClient, _format_context
 
@@ -71,3 +72,52 @@ def test_ollama_client_rejects_remote_base_url_by_default():
         assert "localhost" in str(exc)
     else:
         raise AssertionError("remote Ollama base_url should be rejected by default")
+
+
+def test_agent_retrieval_is_scoped_to_the_session_user(tmp_path, monkeypatch):
+    monkeypatch.setattr(ai_schema, "embed_text", lambda content: [1.0, 0.0])
+    db = ai_schema.init_ai_database(str(tmp_path))
+    alice_id = ai_schema.add_user(db, "alice", "alice@example.com")
+    bob_id = ai_schema.add_user(db, "bob", "bob@example.com")
+    alice_session = ai_schema.create_session(db, alice_id, "Alice")
+    bob_session = ai_schema.create_session(db, bob_id, "Bob")
+    ai_schema.add_message_with_embedding(db, alice_session, "user", "Alice private memory")
+    ai_schema.add_message_with_embedding(db, bob_session, "user", "Bob private memory")
+
+    agent = MemoryChatAgent(db, alice_session, FakeLLMClient(), top_k=1)
+    context = agent.retrieve_context("private")
+
+    assert [message["content"] for message in context] == ["Alice private memory"]
+
+
+def test_agent_rejects_missing_session_and_invalid_top_k(tmp_path):
+    db = ai_schema.init_ai_database(str(tmp_path))
+
+    with pytest.raises(ValueError, match="Session not found"):
+        MemoryChatAgent(db, "missing", FakeLLMClient())
+    with pytest.raises(ValueError, match="top_k"):
+        MemoryChatAgent.create(db_dir=str(tmp_path), llm_client=FakeLLMClient(), top_k=0)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://user:pass@127.0.0.1:11434",
+        "http://127.0.0.1:11434/?token=secret",
+        "http://127.0.0.1:11434/#fragment",
+    ],
+)
+def test_ollama_client_rejects_ambiguous_urls(url):
+    with pytest.raises(ValueError):
+        OllamaClient(base_url=url)
+
+
+def test_agent_rejects_oversized_user_input(tmp_path, monkeypatch):
+    monkeypatch.setattr(ai_schema, "embed_text", lambda content: None)
+    db = ai_schema.init_ai_database(str(tmp_path))
+    user_id = ai_schema.add_user(db, "alice", "alice@example.com")
+    session_id = ai_schema.create_session(db, user_id, "Session")
+    agent = MemoryChatAgent(db, session_id, FakeLLMClient())
+
+    with pytest.raises(ValueError, match="at most"):
+        agent.ask("x" * 20_001)

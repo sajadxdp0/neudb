@@ -1,75 +1,87 @@
-# neuDB — Product Documentation
+# neuDB — product documentation
 
-> Deep codebase documentation + user-serving product guide.
-> Codebase: `/home/sajad/neudb` | Stack: Python stdlib core, optional FastAPI/agent | License: MIT
+> **Inspectable embedded Python storage with atomic JSON tables, text search, and vector search.**
 
-## 1. What this product is
+## Product
 
-neuDB is an embedded, zero-dependency Python storage experiment: a folder of human-readable JSON tables with crash-atomic writes (`temp + fsync + os.replace`), per-path `RLock`, brute-force text + cosine search, CLI, and optional AI-memory tables + HTTP/agent examples. Explicitly NOT a PostgreSQL competitor — for local prototypes and agents needing inspectable persistence (`cat *.json` is the debugger).
+neuDB 0.5.0 is a source-first Python library for local tools, prototypes, and LLM-agent memory. A database is a directory of human-readable JSON files. The core requires Python 3.11+ and has no dependencies.
 
-**Who it's for:** Python developers prototyping agents / tools who want `pip install neudb` persistence without running Postgres.
+It is not PostgreSQL, a hosted database, or a server DBMS. It is designed for one process and small local datasets, with no indexes, transactions, automatic backups, or multi-process locks.
 
-## 2. How it works
+**Audience:** Python developers who want inspectable persistence without operating a database server.
 
+## Install
+
+Install from a GitHub checkout in a virtual environment:
+
+```bash
+git clone https://github.com/sajadxdp0/neudb.git
+cd neudb
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
 ```
-pip install neudb (core: dependencies=[])
-  ↓ neudb/__init__.py: connect, Database, Table
-  ↓ Table = one JSON file {id: record} | Database = directory of tables
-  ↓ CLI: neudb table create | row insert/list/find/search
-Extras:
-  .[api] neudb/api.py:create_app — X-API-Key, /tables|records|search|users|sessions|messages
-  .[agent] neudb/agent.py:MemoryChatAgent, ai_schema.py (users,sessions,messages,tags,memories)
-  demos/realworld_coding_assistant.py, website/dashboard.html
-```
 
-Key files: `neudb/__init__.py`, `neudb/api.py`, `neudb/ai_schema.py`, `neudb/agent.py`, `pyproject.toml`, `docs/*.md`, `benchmarks/bench.py`.
+Add only the extras declared in `pyproject.toml` that you need: `api`, `agent` or `embeddings`, `test`, or `dev`.
 
-## 3. User guide (serve users)
+## Interfaces
 
 ### Library
-```bash
-pip install neudb
-python -c "from neudb import connect; db=connect('./mydb'); t=db.table('users'); t.insert({'username':'alice'}); print(t.all())"
+
+`connect(dir)` returns a `Database`. Use `table()`, `create_table()`, `drop_table()`, and `list_tables()` to manage tables. A `Table` provides `insert`, `insert_many`, `upsert`, `get`, `select_all`, `select_by`, `update`, `delete`, `exists`, `count`, `search_similar`, and `search_text`.
+
+```python
+from neudb import connect
+
+db = connect("neudb_data")
+db.create_table("notes")
+notes = db.table("notes")
+note_id = notes.insert({"title": "Local memory", "done": False})
+notes.update(note_id, {"done": True})
+print(notes.select_all(limit=10, offset=0))
 ```
+
+`create_table()` is silent and returns a boolean. `update()` and `delete()` return booleans. `select_by()` uses typed equality and does not match missing fields.
 
 ### CLI
-```bash
-pip install -e .
-neudb table create users
-neudb row insert users --data '{"username":"alice"}'
-neudb row list users
-```
 
-### API server (Docker or local)
-```bash
-pip install -e ".[api]"
-NEUDB_API_DB=./data NEUDB_API_KEY=secret uvicorn neudb.api:app --port 8000
-# Docker:
-docker build -t neudb-api .
-docker run -p 8000:8000 -v ./data:/data -e NEUDB_API_DB=/data -e NEUDB_API_KEY=secret neudb-api
-# → GET /health, /tables, /records, /search
-```
+Global `--db` and `--json` options precede the command. Table commands are `create`, `list`, and `drop`; row commands are `insert`, `list`, `get`, `find`, `update`, `delete`, `search`, and `search-text`. See [cli.md](cli.md).
 
-## 4. Configuration
+### HTTP API
 
-- `NEUDB_API_DB` — data directory (default `neudb_api_data`)
-- `NEUDB_API_KEY` — required to enable HTTP API (else 503); send as `X-API-Key`
-- `NEUDB_CORS_ORIGINS` — CSV allow-list (default localhost:8080)
+The optional FastAPI application exposes `/health`, `/ready`, table and record routes, `/users`, `/sessions`, `/messages`, `/sessions/{id}/messages`, and `/search`. All routes except health and readiness require the `X-API-Key` administrator credential.
 
-## 5. Deployment / operations
+The API is schemaless and single-process. It does not enforce foreign keys or username uniqueness, and its convenience user/session/message shapes are not a multi-tenant authorization system. See [api.md](api.md).
 
-- Library: install from source (`pip install -e .`); version in `pyproject.toml`; keep `CHANGELOG.md` in sync. PyPI distribution is retired (package delisted; account deleted) — do not script against it
-- API: Dockerfile (uvicorn, `HEALTHCHECK /health`); persist `NEUDB_DIR` volume; single-process only (no multi-process safety)
-- Limits (by design): full-file rewrite/read per op O(N); no index/pagination; ~10K rows/table ceiling; bare `json.load` (no repair); embeddings bloat JSON
-- Benchmarks (2026-09-14, Python 3.11): 2K rows 138 ins/s p50 7.3ms; 5K rows 56 ins/s p50 17.5ms; threaded 4×100 400/400
+### Agent
 
-## 6. Roadmap (if productized)
+`neudb-agent` runs a local chat loop backed by the standard memory tables. Ollama is restricted to localhost by default. OpenAI sends content off-machine. The first embedding use downloads `all-MiniLM-L6-v2`; if the embeddings dependency is unavailable, retrieval falls back to recent messages. Model download or load errors are surfaced. Retrieval is scoped to the session user.
 
-Multi-process file locking, backup/restore round-trip test, 10K-row warn enforcement, single demo only, pagination/index or documented ceiling.
+## Data-directory defaults
 
-## 7. Verification
+| Interface | Setting | Default |
+|-----------|---------|---------|
+| Library `connect(dir)` | `dir` argument | `neudb_data` |
+| CLI `--db` | `NEUDB_DB` | `neudb_data` |
+| API | `NEUDB_API_DB` | `neudb_api_data` |
+| Agent CLI `--db` | `--db` argument | `neudb_agent_memory` |
+| AI schema `init_ai_database(dir)` | `dir` argument | `ai_memory` |
 
-```bash
-pip install -e ".[test,api]" && pytest  # 32 tests
-python benchmarks/bench.py
-```
+## Guarantees and operations
+
+- Records are strict JSON with immutable, non-empty string IDs that match their table keys.
+- Every mutation atomically replaces one complete table snapshot. Supporting POSIX filesystems also fsync the directory after replacement.
+- An fsync error after replacement is ambiguous; reload before retrying.
+- Reads and writes are O(N) full-file operations. Filters and searches are full scans; there are no indexes.
+- Per-path locks cover threads in one process only. Overlapping multi-process writers can lose updates.
+- There are no transactions, automatic backups, checksums, or repair commands. Back up the database directory while no writer is active.
+
+See [storage.md](storage.md), [recovery.md](recovery.md), [concurrency.md](concurrency.md), and [search.md](search.md) for details.
+
+## Privacy and egress
+
+Core storage and search stay local. Embedding setup downloads a model on first use. Ollama stays on localhost unless explicitly allowed by a developer using the client API. OpenAI receives the prompt, retrieved memory, and current message. The static dashboard sends its API key only to the API URL entered by the user and is intended for local use.
+
+## Development
+
+Use the extras in `pyproject.toml`; follow [CONTRIBUTING.md](../CONTRIBUTING.md) and the [benchmark protocol](performance.md). The coding-assistant demo requires explicit `--reset` before replacing its demo data.

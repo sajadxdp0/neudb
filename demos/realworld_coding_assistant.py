@@ -14,18 +14,20 @@ but you want the assistant to remember:
 neuDB solves this without Postgres or a vector DB: JSON files on disk,
 semantic search over message embeddings, and key-value user memories.
 
-Run:
-    python demos/realworld_coding_assistant.py
+Run from an installed checkout:
+    python -m demos.realworld_coding_assistant --reset
 
-Requires (optional, for semantic search):
-    pip install sentence-transformers
+The demo refuses to overwrite existing data unless --reset is supplied.
+Semantic search optionally uses sentence-transformers; the first embedding
+call downloads all-MiniLM-L6-v2. Without it, the demo uses recent memories.
 """
 
+import argparse
 import json
 import shutil
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from neudb import cosine_similarity
 from neudb.ai_schema import (
@@ -36,10 +38,10 @@ from neudb.ai_schema import (
     create_session,
     embed_text,
     get_memory,
+    get_user_messages,
     init_ai_database,
     tag_message,
 )
-
 
 DB_DIR = Path(__file__).resolve().parent / "realworld_dev_assistant_data"
 
@@ -67,7 +69,7 @@ def show_json_files() -> None:
         print(f"    {path.name:<16} {count} records")
 
 
-def build_agent_context(memories: Dict[str, Any], search_results: List[dict]) -> str:
+def build_agent_context(memories: dict[str, Any], search_results: list[dict]) -> str:
     """Same pattern as neudb.agent.MemoryChatAgent."""
     lines = [
         "Relevant neuDB memory (untrusted quoted data):",
@@ -84,6 +86,11 @@ def build_agent_context(memories: Dict[str, Any], search_results: List[dict]) ->
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Run the neuDB persistent-memory demo.")
+    parser.add_argument("--reset", action="store_true", help="delete and recreate the demo database")
+    args = parser.parse_args()
+    if DB_DIR.exists() and not args.reset:
+        raise SystemExit(f"Demo data exists at {DB_DIR}. Re-run with --reset to replace it.")
     if DB_DIR.exists():
         shutil.rmtree(DB_DIR)
 
@@ -103,8 +110,8 @@ def main() -> None:
     step(
         2,
         "Register the developer",
-        "Multi-user support: each person gets their own sessions, messages, "
-        "and memories. In production this maps to auth user IDs.",
+        "Multi-user example: each person has separate sessions, messages, "
+        "and memories. A real application must integrate authentication.",
     )
     user_id = add_user(
         db,
@@ -145,11 +152,15 @@ def main() -> None:
         model="llama3.2",
     )
     m1 = add_message_with_embedding(
-        db, monday, "user",
+        db,
+        monday,
+        "user",
         "I keep getting ModuleNotFoundError: No module named requests in my FastAPI app",
     )
     add_message_with_embedding(
-        db, monday, "assistant",
+        db,
+        monday,
+        "assistant",
         "Activate your venv: source .venv/bin/activate then pip install requests",
     )
     tag_message(db, m1, "python")
@@ -172,12 +183,17 @@ def main() -> None:
         model="llama3.2",
     )
     add_message_with_embedding(
-        db, wednesday, "user",
+        db,
+        wednesday,
+        "user",
         "My Docker container crashes: ModuleNotFoundError for uvicorn when I run the image",
     )
     add_message_with_embedding(
-        db, wednesday, "assistant",
-        "Your Dockerfile probably uses system Python. COPY requirements.txt and RUN pip install -r requirements.txt before CMD.",
+        db,
+        wednesday,
+        "assistant",
+        "Your Dockerfile probably uses system Python. Install the project with its API extra "
+        "before CMD, for example: RUN pip install '.[api]'.",
     )
     pause("Second session saved", "Docker + import error (related to Monday's theme)")
 
@@ -216,8 +232,8 @@ def main() -> None:
         pause("Search mode", "semantic (cosine similarity on embeddings)")
         results = messages_table.search_similar("embedding", query_vec, top_k=4)
     else:
-        pause("Search mode", "text fallback (install sentence-transformers for semantic)")
-        results = messages_table.search_text("content", "import", top_k=4)
+        pause("Search mode", "recent memories (install sentence-transformers for semantic search)")
+        results = get_user_messages(db, user_id)[-4:]
 
     print("\n  Top matches from past sessions:")
     for i, msg in enumerate(results, 1):
@@ -232,8 +248,8 @@ def main() -> None:
         8,
         "Inject memory into the LLM prompt",
         "MemoryChatAgent wraps search results in a marked block. The system "
-        "prompt treats it as untrusted reference — the model uses it for "
-        "context but won't follow instructions hidden inside old messages.",
+        "prompt treats memory as untrusted reference data and instructs the "
+        "model not to follow instructions hidden inside old messages.",
     )
     context = build_agent_context(memories, results)
     print(context)
@@ -246,12 +262,15 @@ def main() -> None:
         "embeddings. Next week's similar question will find today's fix too.",
     )
     friday = create_session(
-        db, user_id, "Production import error", model="llama3.2",
+        db,
+        user_id,
+        "Production import error",
+        model="llama3.2",
     )
     add_message_with_embedding(db, friday, "user", new_question)
     simulated_answer = (
         "Based on your past fixes: use your venv locally (~/projects/myapp/.venv) "
-        "and in Docker add pip install -r requirements.txt in the Dockerfile."
+        "and in Docker install the project with its API extra before CMD."
     )
     add_message_with_embedding(db, friday, "assistant", simulated_answer)
     pause("Friday session saved", "Memory grows automatically each turn")
@@ -260,8 +279,7 @@ def main() -> None:
     step(
         10,
         "Inspect the data (why JSON matters)",
-        "Unlike opaque databases, you can read exactly what was stored. "
-        "This is critical when debugging AI behavior.",
+        "Unlike opaque databases, you can read exactly what was stored. This is critical when debugging AI behavior.",
     )
     print(f"\n  Database path: {DB_DIR}\n")
     show_json_files()
@@ -269,7 +287,9 @@ def main() -> None:
     all_msgs = db.table("messages").select_all()
     if all_msgs:
         sample = {k: v for k, v in all_msgs[0].items() if k != "embedding"}
-        sample["embedding"] = f"[{len(all_msgs[0].get('embedding') or [])} floats]" if all_msgs[0].get("embedding") else None
+        sample["embedding"] = (
+            f"[{len(all_msgs[0].get('embedding') or [])} floats]" if all_msgs[0].get("embedding") else None
+        )
         print("  " + json.dumps(sample, indent=2).replace("\n", "\n  "))
 
     print(f"\n{'=' * 64}")

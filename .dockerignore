@@ -1,0 +1,50 @@
+# Keep local databases, environments, caches, and generated artifacts out of images.
+.git
+.github
+.venv
+venv
+env
+neudb_env
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.ruff_cache
+.mypy_cache
+build
+dist
+.coverage
+htmlcov
+
+# Configuration may contain credentials; images receive values only at runtime.
+.env
+.env.*
+*.pem
+*.key
+
+# Local persistent data.
+data
+neudb_data
+neudb_api_data
+ai_memory
+ai_real_memory
+ai_semantic_demo
+my_ai_memory
+neudb_agent_memory
+demos/*_data
+
+# Documentation, websites, demos, benchmarks, and media are not runtime inputs.
+docs
+website
+media
+demos
+benchmarks
+tests
+*.gif
+*.mp4
+*.mov
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.svg

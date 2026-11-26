@@ -1,42 +1,79 @@
 (function () {
-  document.querySelector('.menu-btn')?.addEventListener('click', () => {
-    document.querySelector('.nav')?.classList.toggle('open');
+  const menuButton = document.querySelector('.menu-btn');
+  const nav = document.querySelector('.nav');
+
+  menuButton?.addEventListener('click', () => {
+    const open = nav?.classList.toggle('open') || false;
+    menuButton.setAttribute('aria-expanded', String(open));
+    menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   });
 
   document.querySelectorAll('.nav a').forEach((link) => {
     link.addEventListener('click', () => {
-      document.querySelector('.nav')?.classList.remove('open');
+      nav?.classList.remove('open');
+      menuButton?.setAttribute('aria-expanded', 'false');
+      menuButton?.setAttribute('aria-label', 'Open menu');
     });
   });
 
-  function copyText(text, button) {
-    navigator.clipboard.writeText(text).then(() => {
-      const original = button.textContent;
-      button.textContent = 'Copied';
-      setTimeout(() => { button.textContent = original; }, 2000);
-    });
+  async function copyText(text, button) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+    }
+    const original = button.textContent;
+    button.textContent = 'Copied';
+    setTimeout(() => { button.textContent = original; }, 2000);
   }
 
-  document.querySelectorAll('[data-copy]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const el = document.querySelector(btn.dataset.copy);
-      if (el) copyText(el.textContent.trim(), btn);
+  document.querySelectorAll('[data-copy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = document.querySelector(button.dataset.copy);
+      if (target) copyText(target.textContent.trim(), button);
     });
   });
 
-  document.querySelectorAll('.code-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const win = tab.closest('.code-window');
-      const id = tab.dataset.tab;
-      win.querySelectorAll('.code-tab').forEach((t) => t.classList.remove('active'));
-      win.querySelectorAll('.code-panel').forEach((p) => p.classList.remove('active'));
-      tab.classList.add('active');
-      win.querySelector(`#${id}`)?.classList.add('active');
+  function activateTab(tab, moveFocus = false) {
+    const codeWindow = tab.closest('.code-window');
+    const id = tab.dataset.tab;
+    codeWindow.querySelectorAll('.code-tab').forEach((item) => {
+      const selected = item === tab;
+      item.classList.toggle('active', selected);
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+    });
+    codeWindow.querySelectorAll('.code-panel').forEach((panel) => {
+      const selected = panel.id === id;
+      panel.classList.toggle('active', selected);
+      panel.hidden = !selected;
+    });
+    if (moveFocus) tab.focus();
+  }
+
+  document.querySelectorAll('.code-tab').forEach((tab, index, tabs) => {
+    tab.addEventListener('click', () => activateTab(tab));
+    tab.addEventListener('keydown', (event) => {
+      let next = index;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      activateTab(tabs[next], true);
     });
   });
 
   const reveals = document.querySelectorAll('.reveal');
-  if (reveals.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (reveals.length && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -48,118 +85,88 @@
       },
       { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     );
-    reveals.forEach((el) => observer.observe(el));
+    reveals.forEach((element) => observer.observe(element));
   } else {
-    reveals.forEach((el) => el.classList.add('visible'));
+    reveals.forEach((element) => element.classList.add('visible'));
   }
 
-  const heroWord = document.querySelector('.hero-repeat');
-  if (heroWord && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const words = ['remember.', 'search.', 'build.'];
-    let i = 0;
-    setInterval(() => {
-      i = (i + 1) % words.length;
-      heroWord.style.opacity = '0';
-      setTimeout(() => {
-        heroWord.textContent = words[i];
-        heroWord.style.opacity = '1';
-      }, 200);
-    }, 3000);
-  }
-
-  /* ── Grok-style chat ── */
-  const chatInput = document.getElementById('grok-input');
-  const chatResponse = document.getElementById('grok-response');
-  const chatSubmit = document.getElementById('grok-submit');
-  const chatSuggestions = document.querySelectorAll('.grok-suggestion');
-
+  const demoInput = document.getElementById('memory-demo-input');
+  const demoResponse = document.getElementById('memory-demo-response');
+  const demoSubmit = document.getElementById('memory-demo-submit');
+  const demoSuggestions = document.querySelectorAll('.demo-suggestion');
   const demoResponses = {
     'How do I fix ModuleNotFoundError?':
-      'Check which Python environment you are using. Activate your virtualenv and run pip list to verify the package is installed.',
+      'Example answer: check which Python environment you are using, activate your virtualenv, and run pip list to verify the package is installed.',
     'Search my past conversations about Python':
-      'Found 3 similar messages (sim=0.51). Top match: "Check which Python environment you are using." from session Debugging Python.',
+      'Example result: three similar messages about Python environments and package installation. A real run would search only the session user’s messages.',
     'Store that my favorite language is Python':
-      'Memory saved: key=fav_language, value=Python for user alice. Stored in memories.json — cat it anytime.',
+      'Example result: key=fav_language, value=Python for user alice would be stored in memories.json. This demo does not write data.',
     default:
-      'neuDB would embed your query, search_similar across messages, and return the top matches by cosine similarity.',
+      'In a real setup, neuDB would embed the query, call messages.search_similar("embedding", vector), and fall back to search_text when embeddings are unavailable.'
   };
 
-  function runChatQuery(query) {
-    if (!query.trim() || !chatResponse) return;
-    chatInput.value = query;
-    chatResponse.hidden = false;
-    chatResponse.classList.remove('visible');
-    chatResponse.innerHTML = '<span class="grok-thinking">Searching memory…</span>';
+  function runDemo(query) {
+    const value = query.trim();
+    if (!value || !demoResponse || !demoInput) return;
+    demoInput.value = value;
+    demoResponse.hidden = false;
+    demoResponse.classList.remove('visible');
+    demoResponse.className = 'demo-response';
+    const thinking = document.createElement('span');
+    thinking.className = 'demo-thinking';
+    thinking.textContent = 'Preparing a simulated example…';
+    demoResponse.replaceChildren(thinking);
+    requestAnimationFrame(() => demoResponse.classList.add('visible'));
 
     setTimeout(() => {
-      const answer = demoResponses[query] || demoResponses.default;
-      chatResponse.innerHTML = `<p class="grok-answer">${answer}</p>`;
-      chatResponse.classList.add('visible');
+      const answer = document.createElement('p');
+      answer.className = 'demo-answer';
+      answer.textContent = demoResponses[value] || demoResponses.default;
+      demoResponse.replaceChildren(answer);
 
       const memoryCard = document.getElementById('card-memory');
-      if (memoryCard) {
-        const prompt = memoryCard.querySelector('.mock-prompt strong');
-        const response = memoryCard.querySelector('.mock-response');
-        if (prompt) prompt.textContent = query;
-        if (response) response.textContent = answer;
-      }
-    }, 600);
+      const prompt = memoryCard?.querySelector('.mock-prompt strong');
+      const response = memoryCard?.querySelector('.mock-response');
+      if (prompt) prompt.textContent = value;
+      if (response) response.textContent = answer.textContent;
+    }, 450);
   }
 
-  chatSubmit?.addEventListener('click', () => runChatQuery(chatInput?.value || ''));
-  chatInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      runChatQuery(chatInput.value);
+  demoSubmit?.addEventListener('click', () => runDemo(demoInput?.value || ''));
+  demoInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      runDemo(demoInput.value);
     }
   });
-
-  chatSuggestions.forEach((chip) => {
-    chip.addEventListener('click', () => runChatQuery(chip.dataset.query || chip.textContent));
+  demoSuggestions.forEach((chip) => {
+    chip.addEventListener('click', () => runDemo(chip.dataset.query || chip.textContent));
   });
 
-  /* ── Sticky product nav ── */
   const productNav = document.getElementById('product-nav');
-  const productLinks = document.querySelectorAll('.product-nav-link');
-  const productCards = document.querySelectorAll('[data-product-card]');
+  const productLinks = [...document.querySelectorAll('.product-nav-link')];
+  const productCards = [...document.querySelectorAll('[data-product-card]')];
   const showcase = document.getElementById('showcase');
 
-  productLinks.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = document.querySelector(link.getAttribute('href'));
-      if (target) {
-        const top = target.getBoundingClientRect().top + window.scrollY - 140;
-        window.scrollTo({ top, behavior: 'smooth' });
-      }
+  function updateProductNav() {
+    if (!productNav || !showcase) return;
+    const bounds = showcase.getBoundingClientRect();
+    const headerHeight = 72;
+    productNav.classList.toggle('is-visible', bounds.top < headerHeight + 120 && bounds.bottom > headerHeight + 120);
+
+    let activeId = productCards[0]?.id;
+    productCards.forEach((card) => {
+      if (card.getBoundingClientRect().top < window.innerHeight * 0.55) activeId = card.id;
     });
-  });
-
-  if (showcase && productNav) {
-    const navObserver = new IntersectionObserver(
-      ([entry]) => {
-        productNav.classList.toggle('is-visible', entry.isIntersecting || entry.boundingClientRect.top < 200);
-      },
-      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
-    );
-    navObserver.observe(showcase);
-
-    const cardObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            productLinks.forEach((link) => {
-              link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
-            });
-            productCards.forEach((card) => {
-              card.classList.toggle('is-highlighted', card.id === id);
-            });
-          }
-        });
-      },
-      { threshold: 0.4, rootMargin: '-140px 0px -40% 0px' }
-    );
-    productCards.forEach((card) => cardObserver.observe(card));
+    productLinks.forEach((link) => {
+      const active = link.getAttribute('href') === `#${activeId}`;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
   }
+
+  window.addEventListener('scroll', updateProductNav, { passive: true });
+  window.addEventListener('resize', updateProductNav);
+  updateProductNav();
 })();

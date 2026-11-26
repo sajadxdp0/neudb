@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish GitHub assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build distributions
+        run: uv build
+      - name: Verify tag matches package version
+        run: |
+          uv run --locked --extra dev python - <<'PY'
+          import os
+          from neudb import __version__
+
+          tag = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          if tag != __version__:
+              raise SystemExit(f"Tag {tag!r} does not match package version {__version__!r}")
+          PY
+      - name: Audit release dependencies
+        run: uv run --locked --extra dev pip-audit
+      - name: Generate build provenance
+        id: attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+      - name: Stage provenance bundle
+        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/attestation.jsonl
+      - name: Attach distributions to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+      # Distribution assets are attached only to GitHub Releases. There is no
+      # PyPI publishing step or PyPI credential in this workflow.

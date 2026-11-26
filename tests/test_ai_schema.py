@@ -5,11 +5,12 @@ from neudb.ai_schema import (
     add_tag,
     add_user,
     create_session,
+    embed_text,
+    get_embedding_model,
     get_memory,
     get_session_messages,
+    get_user_messages,
     get_user_sessions,
-    get_embedding_model,
-    embed_text,
     init_ai_database,
     tag_message,
 )
@@ -82,3 +83,25 @@ def test_embedding_model_is_lazy_when_optional_dependency_is_disabled(monkeypatc
 
     assert get_embedding_model() is None
     assert embed_text("hello") is None
+
+
+def test_user_message_lookup_excludes_other_users(tmp_path):
+    db = init_ai_database(str(tmp_path))
+    alice_id = add_user(db, "alice", "alice@example.com")
+    bob_id = add_user(db, "bob", "bob@example.com")
+    alice_session = create_session(db, alice_id, "Alice")
+    bob_session = create_session(db, bob_id, "Bob")
+    alice_message = add_message(db, alice_session, "user", "Alice")
+    add_message(db, bob_session, "user", "Bob")
+
+    assert [message["id"] for message in get_user_messages(db, alice_id)] == [alice_message]
+
+
+def test_new_users_and_messages_have_utc_timestamps(tmp_path):
+    db = init_ai_database(str(tmp_path))
+    user_id = add_user(db, "alice", "alice@example.com")
+    session_id = create_session(db, user_id, "Session")
+    message_id = add_message(db, session_id, "user", "Hello")
+
+    assert db.table("users").get(user_id)["created_at"].endswith("Z")
+    assert db.table("messages").get(message_id)["created_at"].endswith("Z")

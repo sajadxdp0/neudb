@@ -1,7 +1,6 @@
 """Recovery: corruption surfaces cleanly, interrupted writes can't half-apply."""
 
 import pytest
-
 from neudb import CorruptedTableError, connect
 
 
@@ -61,3 +60,51 @@ def test_duplicate_ids_last_write_wins_explicitly(tmp_path):
     assert rid == "fixed"
     t.insert({"id": "fixed", "v": 2})
     assert t.select_all() == [{"id": "fixed", "v": 2}]
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '{"x": 42}',
+        '{"x": {"username": "missing-id"}}',
+        '{"x": {"id": "different"}}',
+        '{"x": {"id": "x", "value": NaN}}',
+    ],
+)
+def test_malformed_record_shape_is_reported_as_corruption(tmp_path, content):
+    (tmp_path / "users.json").write_text(content, encoding="utf-8")
+
+    with pytest.raises(CorruptedTableError):
+        connect(str(tmp_path)).table("users")
+
+
+def test_invalid_utf8_is_reported_as_corruption(tmp_path):
+    (tmp_path / "users.json").write_bytes(b"\xff\xfe")
+
+    with pytest.raises(CorruptedTableError):
+        connect(str(tmp_path)).table("users")
+
+
+@pytest.mark.parametrize("max_age", [float("nan"), float("inf"), -1])
+def test_sweep_rejects_invalid_max_age(tmp_path, max_age):
+    table = connect(str(tmp_path)).table("users")
+
+    with pytest.raises(ValueError, match="finite non-negative"):
+        table.sweep_orphan_tmps(max_age)
+
+
+def test_failed_replace_preserves_old_file_and_cleans_temp(tmp_path, monkeypatch):
+    db = connect(str(tmp_path))
+    table = db.table("users")
+    record_id = table.insert({"username": "alice"})
+
+    def fail_replace(source, destination):
+        raise OSError("injected replace failure")
+
+    monkeypatch.setattr("neudb.storage.os.replace", fail_replace)
+
+    with pytest.raises(OSError, match="injected replace failure"):
+        table.insert({"username": "bob"})
+
+    assert table.get(record_id) == {"id": record_id, "username": "alice"}
+    assert list(tmp_path.glob(".users.json.*.tmp")) == []

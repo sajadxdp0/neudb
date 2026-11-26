@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest an improvement to neuDB
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. neuDB is embedded, local-first
+        storage for tools, prototypes, and agent memory—not a server database.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What task or limitation are you trying to address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the API, CLI, or behavior you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds, existing features, or other approaches.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Core storage / library
+        - CLI
+        - HTTP API
+        - Agent / embeddings
+        - Developer experience / packaging
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and scope
+      description: Note any expected breaking changes, data migrations, or new dependencies.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues before opening this request.
+          required: true
+        - label: I am willing to help implement and test this feature.
+          required: false

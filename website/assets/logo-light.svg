@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 56" role="img" aria-labelledby="title">
+  <title id="title">neuDB</title>
+  <rect x="2" y="2" width="52" height="52" rx="15" fill="none" stroke="#17171C" stroke-width="3"/>
+  <path d="M17 40V23c0-6 4.5-9.5 10-9.5S37 17 37 23v17" fill="none" stroke="#17171C" stroke-width="4" stroke-linecap="round"/>
+  <path d="M17 30h20" stroke="#6D5BD0" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="43" cy="30" r="3.5" fill="#6D5BD0"/>
+  <text x="70" y="39" fill="#17171C" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="32" font-weight="600" letter-spacing="-1.4">neuDB</text>
+</svg>

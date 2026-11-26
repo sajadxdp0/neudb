@@ -1,8 +1,7 @@
-"""Concurrency: threaded writers must not lose updates (same process)."""
-
 import threading
 
-from neudb import connect
+import neudb.ai_schema as ai_schema
+from neudb import connect, database
 
 
 def test_concurrent_writes_lose_nothing(tmp_path):
@@ -65,3 +64,67 @@ def test_concurrent_readers_and_writers(tmp_path):
     for r in readers:
         r.join()
     assert not errors, errors
+
+
+def test_create_table_does_not_overwrite_a_concurrent_insert(tmp_path, monkeypatch):
+    db = connect(str(tmp_path))
+    entered_write = threading.Event()
+    release_write = threading.Event()
+    errors = []
+
+    real_write_table_file = database.write_table_file
+
+    def delayed_write(path, data):
+        if path.name == "users.json" and not data:
+            entered_write.set()
+            if not release_write.wait(5):
+                raise TimeoutError("test did not release table creation")
+        real_write_table_file(path, data)
+
+    monkeypatch.setattr(database, "write_table_file", delayed_write)
+
+    def create():
+        try:
+            db.create_table("users")
+        except Exception as exc:
+            errors.append(exc)
+
+    def insert():
+        try:
+            db.table("users").insert({"username": "alice"})
+        except Exception as exc:
+            errors.append(exc)
+
+    creator = threading.Thread(target=create)
+    creator.start()
+    assert entered_write.wait(5)
+    inserter = threading.Thread(target=insert)
+    inserter.start()
+    release_write.set()
+    creator.join(5)
+    inserter.join(5)
+
+    assert not errors, errors
+    assert db.table("users").select_by("username", "alice")
+
+
+def test_concurrent_tag_upserts_create_one_tag(tmp_path):
+    db = ai_schema.init_ai_database(str(tmp_path))
+    tag_ids = []
+    errors = []
+
+    def worker():
+        try:
+            tag_ids.append(ai_schema.add_tag(db, "python"))
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert not errors, errors
+    assert len(set(tag_ids)) == 1
+    assert db.table("tags").count() == 1

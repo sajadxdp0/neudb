@@ -3,12 +3,15 @@
 from pathlib import Path
 
 
-class CorruptedTableError(ValueError):
-    """Raised when a table file exists but is not valid JSON.
+class NeuDBError(Exception):
+    """Base class for neuDB-specific errors."""
 
-    Subclasses ValueError so existing `except ValueError` callers keep working,
-    while new code can catch the specific case and decide (restore from backup,
-    quarantine the file, abort). The offending path is on `.path`.
+
+class CorruptedTableError(NeuDBError, ValueError):
+    """Raised when a table file does not satisfy the neuDB table format.
+
+    Subclasses :class:`ValueError` so existing ``except ValueError`` callers
+    keep working. The offending path is available on ``.path``.
     """
 
     def __init__(self, path: Path, message: str):

@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible problem with neuDB
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please search existing issues first and
+        remove credentials, personal data, and database contents from logs.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect to happen?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: neuDB version
+      description: Output of `neudb --version`, or the installed source revision.
+      placeholder: neuDB 0.5.0
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python and uv versions
+      description: Output of `python --version` and `uv --version`.
+      placeholder: Python 3.12.0; uv 0.9.0
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Core storage / library
+        - CLI
+        - HTTP API
+        - Agent / embeddings
+        - Container / packaging
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, installation method, and relevant extras.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal, deterministic reproduction.
+      placeholder: |
+        1. Connect to a temporary directory.
+        2. Create a table.
+        3. Perform the failing operation.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the full error and a sanitized traceback if available.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or proof of concept
+      description: Optional. Use fenced code blocks and remove all secrets.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues before opening this report.
+          required: true
+        - label: I can reproduce this on the supported 0.5.x line.
+          required: false

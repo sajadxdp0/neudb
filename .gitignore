@@ -18,7 +18,9 @@ env/
 neudb_env/
 
 # Local database data (demo / dev runs)
+data/
 ai_memory/
+benchmark.json
 neudb_data/
 ai_real_memory/
 ai_semantic_demo/

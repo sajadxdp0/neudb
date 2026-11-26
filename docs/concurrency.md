@@ -1,9 +1,21 @@
 # neuDB concurrency
 
-Source: `neudb/__init__.py: _PATH_LOCKS, _PATH_LOCKS_GUARD, Table.insert/update/delete`.
+Source: `neudb/config.py`, with locking used by `neudb/database.py`, `neudb/table.py`, and `neudb/storage.py`.
 
-* Same-process threads: per-resolved-path `threading.RLock`. `insert`/`update`/`delete` do `with lock: _reload(); mutate; _save()`. This serializes threads in one process per table file.
-* Reads (`select_*`, `exists`, `search_*`) call `_reload()` without holding the lock.
-* What is NOT provided: multi-process locking (`fcntl`/`flock` absent), cross-machine coordination, transactions, isolation levels, WAL/replay.
-* Consequence: two processes writing the same table file concurrently can lost-update (last-writer-wins on full-file replace). Do not share one database directory across processes if writes overlap.
-* Tests: `tests/test_concurrency.py` — 8 threads × 25 inserts lose nothing (400/400 in benchmarks too); concurrent readers never crash during writer file-replace. Not tested: lock contention profiling, multi-process writers (expected to lose — by design).
+## Same-process threads
+
+neuDB keeps a reentrant `threading.RLock` for each resolved table path. Table creation, dropping, reads, searches, and mutations acquire that lock. Writers reload inside the lock, build a complete snapshot, and replace the file while still holding it. This serializes same-process access across multiple `Table` handles for the same path.
+
+`insert_many()` and `upsert()` perform matching and replacement under one lock, so a batch or upsert commits as one table snapshot within the process.
+
+## Multiple processes
+
+There is no `fcntl`/`flock` lock, interprocess coordination, or cross-machine synchronization. Two processes writing the same table can lose updates: each reloads an older snapshot and the last replacement wins. Atomic file replacement prevents partial JSON, but it does not prevent lost updates.
+
+Do not share a database directory between processes when writes may overlap. Run the optional HTTP API as one process only; multiple workers or replicas are not supported. External scheduling, rolling deployments, and multi-host access are outside the storage contract.
+
+## Transactions and isolation
+
+There are no transactions, isolation levels, WAL, or replay. Each table mutation is atomic for one file. A sequence of library calls is not an atomic unit, and a failure partway through a multi-table workflow can leave earlier table changes committed.
+
+The tests exercise same-process threaded writers and readers. Multi-process writers are intentionally unsupported rather than treated as a safe configuration.

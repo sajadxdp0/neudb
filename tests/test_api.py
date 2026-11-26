@@ -1,8 +1,6 @@
-from fastapi.testclient import TestClient
-
 import neudb.ai_schema as ai_schema
+from fastapi.testclient import TestClient
 from neudb.api import create_app
-
 
 API_KEY = "test-api-key"
 AUTH_HEADERS = {"X-API-Key": API_KEY}
@@ -116,9 +114,7 @@ def test_api_dashboard_table_and_record_crud(tmp_path):
     assert created.status_code == 201
     record_id = created.json()["id"]
 
-    updated = client.patch(
-        f"/tables/notes/records/{record_id}", headers=AUTH_HEADERS, json={"title": "updated"}
-    )
+    updated = client.patch(f"/tables/notes/records/{record_id}", headers=AUTH_HEADERS, json={"title": "updated"})
     assert updated.status_code == 200
     assert updated.json()["record"]["title"] == "updated"
 
@@ -129,3 +125,101 @@ def test_api_dashboard_table_and_record_crud(tmp_path):
     deleted = client.delete(f"/tables/notes/records/{record_id}", headers=AUTH_HEADERS)
     assert deleted.status_code == 200
     assert client.get("/tables/notes/records", headers=AUTH_HEADERS).json()["total"] == 0
+
+
+def test_api_invalid_table_name_returns_422(tmp_path):
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+
+    response = client.get("/tables/bad-name/records", headers=AUTH_HEADERS)
+
+    assert response.status_code == 422
+    assert "Invalid table name" in response.json()["detail"]
+
+
+def test_api_empty_key_is_reported_as_unconfigured(tmp_path):
+    client = TestClient(create_app(str(tmp_path), api_key=""))
+
+    assert client.get("/health").json()["auth_configured"] is False
+    assert client.get("/tables").status_code == 503
+
+
+def test_api_search_rejects_both_query_and_vector(tmp_path):
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+
+    response = client.post("/search", headers=AUTH_HEADERS, json={"query": "python", "vector": [1.0, 0.0]})
+
+    assert response.status_code == 400
+
+
+def test_api_rejects_id_updates_and_missing_records(tmp_path):
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+    created = client.post("/tables/notes/records", headers=AUTH_HEADERS, json={"title": "hello"}).json()
+    record_id = created["id"]
+
+    immutable = client.patch(f"/tables/notes/records/{record_id}", headers=AUTH_HEADERS, json={"id": "new-id"})
+    missing = client.patch("/tables/notes/records/missing", headers=AUTH_HEADERS, json={"title": "updated"})
+
+    assert immutable.status_code == 422
+    assert missing.status_code == 404
+
+
+def test_api_rejects_oversized_request_bodies(tmp_path, monkeypatch):
+    monkeypatch.setenv("NEUDB_MAX_REQUEST_BYTES", "1024")
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+
+    response = client.post("/tables/notes/records", headers=AUTH_HEADERS, json={"content": "x" * 2048})
+
+    assert response.status_code == 413
+
+
+def test_api_reports_corrupted_tables_as_unavailable(tmp_path):
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+    (tmp_path / "messages.json").write_text('{"broken": 1}', encoding="utf-8")
+
+    response = client.get("/tables/messages/records", headers=AUTH_HEADERS)
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Table data is corrupted."
+
+
+def test_api_ready_fails_closed_without_auth(tmp_path):
+    configured = TestClient(create_app(str(tmp_path / "configured"), api_key=API_KEY))
+    unconfigured = TestClient(create_app(str(tmp_path / "unconfigured"), api_key=""))
+
+    assert configured.get("/ready").status_code == 200
+    assert unconfigured.get("/ready").status_code == 503
+
+
+def test_api_rejects_oversized_chunked_request(tmp_path, monkeypatch):
+    monkeypatch.setenv("NEUDB_MAX_REQUEST_BYTES", "1024")
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+
+    def chunks():
+        yield b'{"content":"'
+        yield b"x" * 2048
+        yield b'"}'
+
+    response = client.post(
+        "/tables/notes/records",
+        headers={**AUTH_HEADERS, "Content-Type": "application/json"},
+        content=chunks(),
+    )
+
+    assert response.status_code == 413
+
+
+def test_api_session_messages_are_paginated(tmp_path, monkeypatch):
+    monkeypatch.setattr(ai_schema, "EMBEDDING_AVAILABLE", False)
+    client = TestClient(create_app(str(tmp_path), api_key=API_KEY))
+    for content in ["first", "second", "third"]:
+        client.post(
+            "/messages",
+            headers=AUTH_HEADERS,
+            json={"session_id": "s1", "role": "user", "content": content},
+        )
+
+    response = client.get("/sessions/s1/messages?limit=1&offset=1", headers=AUTH_HEADERS)
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 3
+    assert [message["content"] for message in response.json()["messages"]] == ["second"]

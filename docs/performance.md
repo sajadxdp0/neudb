@@ -1,30 +1,40 @@
-# neuDB performance
+# neuDB performance protocol
 
-Measured 2026-09-14 via `python benchmarks/bench.py` on this dev machine
-(Python 3.11, local disk, commit on `main` after corruption/concurrency hardening).
-Full-file rewrite per write, full-file load per read — cost grows with table size
-by construction. These numbers document that, not marketing.
+`benchmarks/bench.py` characterizes the full-file JSON design on the machine where it runs. It does not establish cross-machine performance guarantees or unsupported scaling comparisons.
 
-## Results
+## Run
 
-| Workload | 2,000 records (338KB file) | 5,000 records (847KB file) |
-|---|---|---|
-| Insert throughput | 138 rec/s, p50 7.3ms, p95 13.7ms | 56 rec/s, p50 17.5ms, p95 34.4ms |
-| `select_all` (full reload) | 2.6ms | 6.9ms |
-| `search_text` over all | 2.9ms | 6.8ms |
-| `search_similar` (1K rows, dim=32) | 14.3ms | 13.7ms |
-| Threaded 4×100 inserts | 1.94s, 400/400 rows, 0 lost | 2.18s, 400/400 rows, 0 lost |
+From an installed checkout:
 
-## What this proves
+```bash
+python benchmarks/bench.py --records 250 --vector-records 250 --vector-dim 32
+python benchmarks/bench.py --records 250 --vector-records 250 --vector-dim 32 --json
+```
 
-1. Per-insert latency grows with file size (7ms → 18ms mean from 2K → 5K):
-   every write rewrites the whole file. O(N) writes confirmed by measurement.
-2. Reads/searches are linear scans but cheap at small sizes (single-digit ms).
-3. Same-process threaded writers lose nothing (RLock + reload-inside-lock).
-4. Vector search cost is dominated by row count × dim, not table-file size.
+The defaults are 2,000 document records, the same number of vector records, and 32 dimensions. Choose smaller inputs for a quick local run; every insert rewrites a complete table.
 
-## What this does NOT prove
+## Workloads
 
-100K-record behavior (extrapolates to minutes per thousand writes — do not use
-neuDB there), multi-process safety (none — last-writer-wins across processes),
-or crash power-loss durability beyond single-file atomic replace.
+The script measures:
+
+- individual document inserts, including throughput and p50/p95/mean latency;
+- one `select_all()` full reload;
+- one case-insensitive text search;
+- one cosine similarity search over a separately built vector table;
+- four same-process threads performing 100 inserts each into one table, with an expected final count of 400.
+
+## Reproducibility
+
+- Each run uses a `tempfile.TemporaryDirectory`, removed automatically when the run finishes or raises.
+- Each run is one explicit trial (`trials: 1`), not a statistical sample.
+- JSON output is a single result object containing metadata, document-table results, vector results, and threaded-write results.
+- Metadata records the neuDB version, Python version and implementation, platform, Git commit when available, UTC timestamp, and trial count.
+- Workload sizes and vector dimensions are included in the result so runs can be interpreted without guessing the input.
+
+Save machine-readable output for comparison:
+
+```bash
+python benchmarks/bench.py --records 250 --json > benchmark.json
+```
+
+Interpret results in the context of the reported environment and commit. The structural cost is visible in the implementation: every read loads the full file and every write replaces it, so both grow with table size. The benchmark documents observed behavior; it does not prove multi-process safety, crash durability, or a fixed supported row count.

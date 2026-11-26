@@ -3,43 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>neuDB</title>
-  <meta name="description" content="AI-native database for agents. JSON tables, semantic search, zero dependencies.">
+  <title>neuDB — inspectable embedded Python storage</title>
+  <meta name="description" content="Inspectable embedded Python storage with atomic JSON tables, text search, and vector search for local tools, prototypes, and LLM-agent memory.">
+  <meta name="keywords" content="neuDB, embedded Python database, JSON database, vector search, text search, AI memory, LLM memory, local database, developer tools">
   <meta name="author" content="Abdulla Sajad">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#0B0B0E">
+  <link rel="canonical" href="https://sajadxdp0.github.io/neudb/">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/app-icon.jpg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="neuDB">
-  <meta property="og:description" content="Frontier memory for everything you build. JSON tables, semantic search, agent loops.">
+  <meta property="og:site_name" content="neuDB">
+  <meta property="og:title" content="neuDB — storage you can read">
+  <meta property="og:description" content="Inspectable embedded Python storage with atomic JSON tables, text search, and vector search.">
   <meta property="og:url" content="https://sajadxdp0.github.io/neudb/">
-  <meta property="og:image" content="assets/logo-mark.jpg">
+  <meta property="og:image" content="https://sajadxdp0.github.io/neudb/assets/social-preview.png">
+  <meta property="og:image:alt" content="neuDB: storage you can read. Atomic JSON tables, text search, and vector search.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="assets/logo-mark.jpg">
+  <meta name="twitter:title" content="neuDB — storage you can read">
+  <meta name="twitter:description" content="Inspectable embedded Python storage with atomic JSON tables, text search, and vector search.">
+  <meta name="twitter:image" content="https://sajadxdp0.github.io/neudb/assets/social-preview.png">
+  <meta name="twitter:image:alt" content="neuDB: storage you can read. Atomic JSON tables, text search, and vector search.">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="header">
     <div class="header-inner">
-      <a href="#" class="logo">
+      <a href="#" class="logo" aria-label="neuDB home">
         <img src="assets/logo.svg" alt="neuDB" class="logo-wordmark" height="20">
       </a>
-      <nav class="nav" aria-label="Primary">
+      <nav class="nav" id="primary-nav" aria-label="Primary">
         <a href="#showcase">Products</a>
         <a href="#developers">Developers</a>
-        <a href="#news">News</a>
+        <a href="#news">Release notes</a>
         <a href="https://github.com/sajadxdp0/neudb/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
       </nav>
       <div class="header-actions">
         <a href="https://github.com/sajadxdp0/neudb" class="btn btn-ghost" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/sajadxdp0/neudb#running-locally" class="btn btn-primary" target="_blank" rel="noopener">Install</a>
-        <button type="button" class="menu-btn" aria-label="Open menu">
+        <a href="https://github.com/sajadxdp0/neudb#install-from-source" class="btn btn-primary" target="_blank" rel="noopener">Install</a>
+        <button type="button" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>
@@ -47,161 +51,163 @@
   </header>
 
   <main id="main">
-    <!-- Hero with animated background -->
     <section class="hero-wrap">
       <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
       <div class="hero-vignette" aria-hidden="true"></div>
       <section class="hero">
-      <div class="hero-content reveal">
-        <h1>
-          <span class="line">AI-native database</span>
-          <span class="line">for everything you</span>
-          <span class="line"><span class="hero-repeat emphasis">remember.</span></span>
-        </h1>
-        <p class="hero-lead">
-          JSON tables, semantic search, agent memory.<br>
-          Zero core dependencies. Human-readable by design.
-        </p>
-        <div class="hero-actions">
-          <a href="https://github.com/sajadxdp0/neudb#running-locally" class="btn btn-primary" target="_blank" rel="noopener">Install from source</a>
-          <a href="dashboard.html" class="btn btn-outline">Open dashboard</a>
-        </div>
-      </div>
-
-      <!-- Grok-style chat input -->
-      <div class="grok-chat reveal">
-        <div class="grok-input-wrap">
-          <input
-            type="text"
-            id="grok-input"
-            class="grok-input"
-            placeholder="Ask neuDB to search memory, store a fact, or debug Python…"
-            autocomplete="off"
-            spellcheck="false"
-          >
-          <button type="button" id="grok-submit" class="grok-submit" aria-label="Search memory">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-        </div>
-        <div class="grok-suggestions" role="list">
-          <button type="button" class="grok-suggestion" data-query="How do I fix ModuleNotFoundError?">How do I fix ModuleNotFoundError?</button>
-          <button type="button" class="grok-suggestion" data-query="Search my past conversations about Python">Search past conversations</button>
-          <button type="button" class="grok-suggestion" data-query="Store that my favorite language is Python">Store a user memory</button>
-        </div>
-        <div id="grok-response" class="grok-response" hidden></div>
-        <a href="#showcase" class="grok-explore">Memory Explore →</a>
-      </div>
-
-      <!-- Sticky product nav -->
-      <nav class="product-nav" id="product-nav" aria-label="Products">
-        <div class="product-nav-inner">
-          <a href="#card-memory" class="product-nav-link active">Memory</a>
-          <a href="#card-cli" class="product-nav-link">CLI</a>
-          <a href="#card-agent" class="product-nav-link">Agent</a>
-          <a href="#card-search" class="product-nav-link">Search</a>
-          <a href="#card-api" class="product-nav-link">API</a>
-        </div>
-      </nav>
-
-      <!-- Product showcase cards (xAI-style) -->
-      <div class="showcase" id="showcase">
-        <article class="showcase-card full reveal" id="card-memory" data-product-card>
-          <div class="showcase-preview">
-            <div class="mock-chat">
-              <p class="mock-prompt"><strong>How do I fix ModuleNotFoundError?</strong></p>
-              <p class="mock-response">Check which Python environment you're using. Activate your virtualenv and run <code style="font-family:var(--font-mono);font-size:12px;color:rgba(255,255,255,0.7)">pip list</code> to verify the package is installed.</p>
-            </div>
+        <div class="hero-content reveal">
+          <h1>
+            <span class="line">Storage you</span>
+            <span class="line">can <span class="hero-repeat emphasis">read.</span></span>
+          </h1>
+          <p class="hero-lead">
+            Inspectable embedded Python storage with atomic JSON tables,<br>
+            text search, and vector search. Zero core dependencies.
+          </p>
+          <div class="hero-actions">
+            <a href="https://github.com/sajadxdp0/neudb#install-from-source" class="btn btn-primary" target="_blank" rel="noopener">Install from source</a>
+            <a href="dashboard.html" class="btn btn-outline">Open local dashboard</a>
           </div>
-          <div class="showcase-footer">
-            <span>Memory</span>
-            <a href="#developers" class="showcase-link">Explore →</a>
-          </div>
-        </article>
+          <p class="hero-dashboard-note">The dashboard is local-only. Serve this site locally when connecting it to a local API.</p>
+        </div>
 
-        <article class="showcase-card reveal" id="card-cli" data-product-card>
-          <div class="showcase-preview">
-            <div class="mock-terminal">
-              <div><span class="prompt">❯</span> <span class="cmd">neudb</span> table create users</div>
-              <div><span class="prompt">❯</span> <span class="cmd">neudb</span> row insert users <span class="flag">--data</span> <span class="str">'{"username":"alice"}'</span></div>
-              <div><span class="prompt">❯</span> <span class="cmd">neudb</span> row list users</div>
-              <div style="margin-top:12px;color:rgba(255,255,255,0.4)">{'username': 'alice', 'id': '7e6b0543-...'}</div>
-              <div style="margin-top:8px"><span class="prompt">❯</span> <span class="cursor"></span></div>
-            </div>
+        <div class="memory-demo reveal">
+          <div class="demo-heading">
+            <span>Try the memory loop</span>
+            <span class="demo-badge">Simulated demo</span>
           </div>
-          <div class="showcase-footer">
-            <span>CLI</span>
-            <a href="#developers" class="showcase-link">Explore →</a>
+          <p class="demo-note">No server or database is connected. These responses are canned examples.</p>
+          <div class="demo-input-wrap">
+            <label class="sr-only" for="memory-demo-input">Try the simulated memory demo</label>
+            <input
+              type="text"
+              id="memory-demo-input"
+              class="demo-input"
+              placeholder="Ask about Python imports or stored memory…"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <button type="button" id="memory-demo-submit" class="demo-submit" aria-label="Run simulated memory search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
           </div>
-        </article>
+          <div class="demo-suggestions" aria-label="Example prompts">
+            <button type="button" class="demo-suggestion" data-query="How do I fix ModuleNotFoundError?">Fix ModuleNotFoundError</button>
+            <button type="button" class="demo-suggestion" data-query="Search my past conversations about Python">Search past conversations</button>
+            <button type="button" class="demo-suggestion" data-query="Store that my favorite language is Python">Store a user memory</button>
+          </div>
+          <div id="memory-demo-response" class="demo-response" role="status" aria-live="polite" hidden></div>
+          <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/search.md" class="demo-explore">How retrieval works →</a>
+        </div>
 
-        <article class="showcase-card reveal" id="card-agent" data-product-card>
-          <div class="showcase-preview">
-            <div class="mock-agent">
-              <div class="task running"><span class="status-dot"></span>Search similar messages</div>
-              <div class="task running"><span class="status-dot"></span>Inject memory context</div>
-              <div class="task done"><span class="status-dot"></span>Store user + assistant turn</div>
-              <div class="thought">◆ Thought for 0.3s</div>
-              <div class="mock-code">
-                <span class="ln">42</span><span class="kw">context</span> = db.<span class="fn">search_similar</span>(query_vec)<br>
-                <span class="ln">43</span>answer = llm.<span class="fn">chat</span>(messages + context)
+        <nav class="product-nav" id="product-nav" aria-label="Products">
+          <div class="product-nav-inner">
+            <a href="#card-memory" class="product-nav-link active">Memory</a>
+            <a href="#card-cli" class="product-nav-link">CLI</a>
+            <a href="#card-agent" class="product-nav-link">Agent</a>
+            <a href="#card-search" class="product-nav-link">Search</a>
+            <a href="#card-api" class="product-nav-link">API</a>
+          </div>
+        </nav>
+
+        <div class="showcase" id="showcase">
+          <article class="showcase-card full reveal" id="card-memory" data-product-card>
+            <div class="showcase-preview">
+              <div class="mock-chat">
+                <p class="mock-prompt"><strong>How do I fix ModuleNotFoundError?</strong></p>
+                <p class="mock-response">Check which Python environment you are using. Activate your virtualenv and run <code>pip list</code> to verify the package is installed.</p>
               </div>
             </div>
-          </div>
-          <div class="showcase-footer">
-            <span>Agent</span>
-            <a href="#developers" class="showcase-link">Explore →</a>
-          </div>
-        </article>
+            <div class="showcase-footer">
+              <span>Memory</span>
+              <a href="#developers" class="showcase-link">Explore →</a>
+            </div>
+          </article>
 
-        <article class="showcase-card reveal" id="card-search" data-product-card>
-          <div class="showcase-preview">
-            <div class="mock-search">
-              <div class="mock-search-query">Python import errors</div>
-              <div class="mock-search-result">
-                <span class="sim">sim=0.509</span> · [assistant] Check which Python environment you are using.
-              </div>
-              <div class="mock-search-result">
-                <span class="sim">sim=0.412</span> · [user] How do I install packages in a venv?
+          <article class="showcase-card reveal" id="card-cli" data-product-card>
+            <div class="showcase-preview">
+              <div class="mock-terminal">
+                <div><span class="prompt">❯</span> <span class="cmd">neudb</span> table create users</div>
+                <div><span class="prompt">❯</span> <span class="cmd">neudb</span> row insert users <span class="flag">--data</span> <span class="str">'{"username":"alice"}'</span></div>
+                <div><span class="prompt">❯</span> <span class="cmd">neudb</span> row list users</div>
+                <div class="terminal-output">{'username': 'alice', 'id': '7e6b0543-...'}</div>
+                <div><span class="prompt">❯</span> <span class="cursor"></span></div>
               </div>
             </div>
-          </div>
-          <div class="showcase-footer">
-            <span>Search</span>
-            <a href="#developers" class="showcase-link">Explore →</a>
-          </div>
-        </article>
-
-        <article class="showcase-card reveal" id="card-api" data-product-card>
-          <div class="showcase-preview">
-            <div class="mock-code" style="font-size:12px;line-height:1.8">
-              <span style="color:var(--text-faint)">POST</span> /search<br>
-              <span style="color:var(--text-faint)">X-API-Key:</span> ••••••••<br><br>
-              {<br>
-              &nbsp;&nbsp;"query": "Python import error",<br>
-              &nbsp;&nbsp;"top_k": 5<br>
-              }<br><br>
-              <span style="color:var(--text-faint)">→ 200 OK · 3 results</span>
+            <div class="showcase-footer">
+              <span>CLI</span>
+              <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/cli.md" class="showcase-link" target="_blank" rel="noopener">Reference →</a>
             </div>
-          </div>
-          <div class="showcase-footer">
-            <span>API</span>
-            <a href="#developers" class="showcase-link">Explore →</a>
-          </div>
-        </article>
-      </div>
+          </article>
+
+          <article class="showcase-card reveal" id="card-agent" data-product-card>
+            <div class="showcase-preview">
+              <div class="mock-agent">
+                <div class="task done"><span class="status-dot"></span>Resolve the session user</div>
+                <div class="task done"><span class="status-dot"></span>Retrieve that user's messages</div>
+                <div class="task done"><span class="status-dot"></span>Inject quoted memory context</div>
+                <div class="task done"><span class="status-dot"></span>Store user + assistant turn</div>
+                <div class="mock-code">
+                  <span class="ln">42</span>context = messages.<span class="fn">search_similar</span>(<span class="str">"embedding"</span>, query_vector)<br>
+                  <span class="ln">43</span>answer = llm.<span class="fn">chat</span>(prompt + context)
+                </div>
+              </div>
+            </div>
+            <div class="showcase-footer">
+              <span>Agent</span>
+              <a href="#developers" class="showcase-link">Explore →</a>
+            </div>
+          </article>
+
+          <article class="showcase-card reveal" id="card-search" data-product-card>
+            <div class="showcase-preview">
+              <div class="mock-search">
+                <div class="mock-search-query">Python import errors</div>
+                <div class="mock-search-result">
+                  <span class="sim">vector match</span> · Check which Python environment you are using.
+                </div>
+                <div class="mock-search-result">
+                  <span class="sim">text fallback</span> · How do I install packages in a venv?
+                </div>
+              </div>
+            </div>
+            <div class="showcase-footer">
+              <span>Search</span>
+              <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/search.md" class="showcase-link" target="_blank" rel="noopener">Details →</a>
+            </div>
+          </article>
+
+          <article class="showcase-card reveal" id="card-api" data-product-card>
+            <div class="showcase-preview">
+              <div class="mock-code api-code">
+                <span class="http-method">POST</span> /search<br>
+                Content-Type: application/json<br>
+                X-API-Key: ••••••••<br><br>
+                {<br>
+                &nbsp;&nbsp;"query": "Python import error",<br>
+                &nbsp;&nbsp;"top_k": 5<br>
+                }<br><br>
+                <span class="api-result">→ 200 OK · matching records</span>
+              </div>
+            </div>
+            <div class="showcase-footer">
+              <span>API</span>
+              <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/api.md" class="showcase-link" target="_blank" rel="noopener">Reference →</a>
+            </div>
+          </article>
+        </div>
       </section>
     </section>
 
-    <!-- For developers -->
     <section class="dev-section reveal" id="developers">
       <p class="dev-label">For developers</p>
       <h2>
         <span class="line">One engine.</span>
         <span class="line">Every interface.</span>
       </h2>
-      <p class="dev-desc">CLI, Python library, HTTP API, and agent loop — all through a single storage engine. Start building in seconds.</p>
+      <p class="dev-desc">Python library, CLI, optional single-process HTTP API, and agent loop — all over the same inspectable JSON tables.</p>
       <div class="dev-actions">
-        <a href="https://github.com/sajadxdp0/neudb#running-locally" class="btn btn-primary" target="_blank" rel="noopener">Install from source</a>
+        <a href="https://github.com/sajadxdp0/neudb#install-from-source" class="btn btn-primary" target="_blank" rel="noopener">Install from source</a>
         <a href="https://github.com/sajadxdp0/neudb/blob/main/README.md" class="btn btn-outline" target="_blank" rel="noopener">Read docs</a>
       </div>
 
@@ -211,55 +217,60 @@
           <div class="dev-stat-label">Core dependencies</div>
         </div>
         <div>
-          <div class="dev-stat-value">Full-scan</div>
-          <div class="dev-stat-label">Pure-Python search (no index yet)</div>
+          <div class="dev-stat-value">3.11+</div>
+          <div class="dev-stat-label">Minimum Python</div>
         </div>
         <div>
-          <div class="dev-stat-value">5</div>
-          <div class="dev-stat-label">AI memory tables</div>
+          <div class="dev-stat-value">1 file</div>
+          <div class="dev-stat-label">Per JSON table</div>
         </div>
       </div>
 
       <div class="code-window">
-        <div class="code-tabs" role="tablist">
-          <button class="code-tab active" role="tab" data-tab="code-python" aria-selected="true">Python</button>
-          <button class="code-tab" role="tab" data-tab="code-cli">CLI</button>
-          <button class="code-tab" role="tab" data-tab="code-curl">cURL</button>
+        <div class="code-tabs" role="tablist" aria-label="Quickstart examples">
+          <button class="code-tab active" role="tab" id="tab-python" data-tab="code-python" aria-selected="true" aria-controls="code-python">Python + agent</button>
+          <button class="code-tab" role="tab" id="tab-cli" data-tab="code-cli" aria-selected="false" aria-controls="code-cli" tabindex="-1">CLI</button>
+          <button class="code-tab" role="tab" id="tab-curl" data-tab="code-curl" aria-selected="false" aria-controls="code-curl" tabindex="-1">cURL</button>
         </div>
-        <div id="code-python" class="code-panel active" role="tabpanel">
+        <div id="code-python" class="code-panel active" role="tabpanel" aria-labelledby="tab-python">
           <button type="button" class="code-copy" data-copy="#snippet-python">Copy</button>
-          <pre id="snippet-python"><span class="kw">from</span> neudb.ai_schema <span class="kw">import</span> *
+          <pre id="snippet-python"><span class="kw">from</span> neudb.ai_schema <span class="kw">import</span> (
+    add_message_with_embedding, add_user, create_session,
+    embed_text, init_ai_database,
+)
 
 db = <span class="fn">init_ai_database</span>(<span class="str">"my_memory"</span>)
 alice = <span class="fn">add_user</span>(db, <span class="str">"alice"</span>, <span class="str">"alice@example.com"</span>)
 session = <span class="fn">create_session</span>(db, alice, <span class="str">"Debugging Python"</span>)
 
 <span class="fn">add_message_with_embedding</span>(
-    db, session, <span class="str">"user"</span>,
-    <span class="str">"How do I fix ModuleNotFoundError?"</span>
+    db, session, <span class="str">"user"</span>, <span class="str">"How do I fix ModuleNotFoundError?"</span>
 )
 
-vec = <span class="fn">embed_text</span>(<span class="str">"Python import errors"</span>)
-results = db.<span class="fn">table</span>(<span class="str">"messages"</span>).<span class="fn">search_similar</span>(
-    <span class="str">"embedding"</span>, vec, top_k=<span class="str">5</span>
-)</pre>
+messages = db.<span class="fn">table</span>(<span class="str">"messages"</span>)
+vector = <span class="fn">embed_text</span>(<span class="str">"Python import errors"</span>)
+<span class="kw">if</span> vector <span class="kw">is</span> <span class="kw">None</span>:
+    results = messages.<span class="fn">search_text</span>(<span class="str">"content"</span>, <span class="str">"Python import errors"</span>, top_k=<span class="str">5</span>)
+<span class="kw">else</span>:
+    results = messages.<span class="fn">search_similar</span>(<span class="str">"embedding"</span>, vector, top_k=<span class="str">5</span>)</pre>
+          <p class="code-note">Install <code>.[embeddings]</code> or <code>.[agent]</code> for embeddings. First use downloads <code>all-MiniLM-L6-v2</code>; <code>embed_text()</code> returns <code>None</code> when the dependency is unavailable, so this example falls back to text search. Download or load errors are surfaced.</p>
         </div>
-        <div id="code-cli" class="code-panel" role="tabpanel">
+        <div id="code-cli" class="code-panel" role="tabpanel" aria-labelledby="tab-cli" hidden>
           <button type="button" class="code-copy" data-copy="#snippet-cli">Copy</button>
           <pre id="snippet-cli"><span class="cm"># Create and query tables</span>
-neudb table create users
-neudb row insert users --data <span class="str">'{"username":"alice"}'</span>
-neudb row list users
+neudb --db ./neudb_data table create users
+neudb --db ./neudb_data row insert users --data <span class="str">'{"username":"alice"}'</span>
+neudb --db ./neudb_data row list users --limit 10
 
-<span class="cm"># Semantic search</span>
-neudb row search messages \
+<span class="cm"># Vector search</span>
+neudb --db ./neudb_data row search messages \
   --field embedding \
   --vector <span class="str">'[0.9, 0.1, 0.2]'</span>
 
-<span class="cm"># Agent with long-term memory</span>
-neudb-agent --provider ollama --model llama3.2</pre>
+<span class="cm"># Local Ollama agent with memory</span>
+neudb-agent --provider ollama --model llama3.2 --db ./agent_memory</pre>
         </div>
-        <div id="code-curl" class="code-panel" role="tabpanel">
+        <div id="code-curl" class="code-panel" role="tabpanel" aria-labelledby="tab-curl" hidden>
           <button type="button" class="code-copy" data-copy="#snippet-curl">Copy</button>
           <pre id="snippet-curl"><span class="cm"># Create a user</span>
 curl -X POST http://127.0.0.1:8000/users \
@@ -267,112 +278,114 @@ curl -X POST http://127.0.0.1:8000/users \
   -H <span class="str">"X-API-Key: $NEUDB_API_KEY"</span> \
   -d <span class="str">'{"username":"alice","email":"alice@example.com"}'</span>
 
-<span class="cm"># Semantic search</span>
+<span class="cm"># Query search with text fallback</span>
 curl -X POST http://127.0.0.1:8000/search \
+  -H <span class="str">"Content-Type: application/json"</span> \
   -H <span class="str">"X-API-Key: $NEUDB_API_KEY"</span> \
   -d <span class="str">'{"query":"Python import error","top_k":5}'</span></pre>
         </div>
       </div>
     </section>
 
-    <!-- Mission / big stats -->
     <section class="mission-section reveal">
       <div class="mission-stats">
         <div class="mission-stat">
-          <div class="mission-number">24</div>
-          <div class="mission-label">tests passing in CI</div>
-        </div>
-        <div class="mission-stat">
           <div class="mission-number">0</div>
-          <div class="mission-label">core dependencies required</div>
+          <div class="mission-label">core dependencies</div>
         </div>
         <div class="mission-stat">
-          <div class="mission-number">5</div>
-          <div class="mission-label">memory tables built in</div>
+          <div class="mission-number">1</div>
+          <div class="mission-label">process for the API</div>
+        </div>
+        <div class="mission-stat">
+          <div class="mission-number">100%</div>
+          <div class="mission-label">inspectable JSON files</div>
         </div>
       </div>
-      <h2>Mission to make AI memory debuggable.</h2>
+      <h2>Built for debuggable local memory.</h2>
+      <p class="mission-copy">No indexes, transactions, automatic backups, or multi-process locks. Full-file reads and writes keep the design small and explicit.</p>
     </section>
 
-    <!-- News / Changelog -->
     <section class="news-section reveal" id="news">
       <div class="news-header">
-        <h2>Latest news</h2>
-        <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" target="_blank" rel="noopener">All posts →</a>
+        <h2>0.5.0 release notes</h2>
+        <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a>
       </div>
       <div class="news-grid">
-        <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" class="news-card" target="_blank" rel="noopener">
-          <div class="news-thumb"><span class="tag">Security</span></div>
+        <a href="https://github.com/sajadxdp0/neudb#install-from-source" class="news-card" target="_blank" rel="noopener">
+          <div class="news-thumb"><span class="tag">Source-first</span></div>
           <div class="news-body">
-            <p class="news-date">Jul 2, 2026</p>
-            <h3>Security audit: path validation, API auth, atomic writes</h3>
+            <p class="news-date">Installation</p>
+            <h3>Install from a GitHub checkout in a virtual environment</h3>
           </div>
         </a>
-        <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" class="news-card" target="_blank" rel="noopener">
-          <div class="news-thumb"><span class="tag">Feature</span></div>
+        <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/storage.md" class="news-card" target="_blank" rel="noopener">
+          <div class="news-thumb"><span class="tag">Storage</span></div>
           <div class="news-body">
-            <p class="news-date">Jun 24, 2026</p>
-            <h3>Introducing semantic search and the LLM agent memory loop</h3>
+            <p class="news-date">Python 3.11+</p>
+            <h3>Strict JSON, immutable IDs, and atomic table snapshots</h3>
           </div>
         </a>
-        <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" class="news-card" target="_blank" rel="noopener">
-          <div class="news-thumb"><span class="tag">API</span></div>
+        <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/README.md" class="news-card" target="_blank" rel="noopener">
+          <div class="news-thumb"><span class="tag">Interfaces</span></div>
           <div class="news-body">
-            <p class="news-date">Jun 23, 2026</p>
-            <h3>FastAPI HTTP layer with Swagger docs at /docs</h3>
-          </div>
-        </a>
-        <a href="https://github.com/sajadxdp0/neudb" class="news-card" target="_blank" rel="noopener">
-          <div class="news-thumb"><span class="tag">Release</span></div>
-          <div class="news-body">
-            <p class="news-date">Jun 22, 2026</p>
-            <h3>neuDB v0.2.0 — core engine and CLI released</h3>
+            <p class="news-date">Documentation</p>
+            <h3>Complete library, CLI, API, and agent guides</h3>
           </div>
         </a>
       </div>
     </section>
 
-    <!-- Get started -->
     <section class="start-section reveal">
       <h2>Choose how to get started</h2>
       <div class="start-grid">
         <article class="start-card">
-          <h3>Build on your own</h3>
-          <p>Launch your agent or prototype with:</p>
+          <h3>Start local</h3>
+          <p>Install the core from source and inspect your data:</p>
           <div class="start-divider"></div>
           <ul class="start-list">
             <li>Zero core dependencies</li>
-            <li>CLI, library, and optional HTTP API</li>
+            <li>Python 3.11 or newer</li>
             <li>Human-readable JSON you can cat</li>
-            <li>Semantic search with text fallback</li>
+            <li>Atomic single-table writes</li>
           </ul>
-          <a href="https://github.com/sajadxdp0/neudb#running-locally" class="btn btn-primary" target="_blank" rel="noopener">Start building</a>
+          <a href="https://github.com/sajadxdp0/neudb#install-from-source" class="btn btn-primary" target="_blank" rel="noopener">Start building</a>
         </article>
         <article class="start-card">
-          <h3>Run the full stack</h3>
-          <p>API server and LLM agent with memory:</p>
+          <h3>Explore API + agent</h3>
+          <p>Add the optional local interfaces:</p>
           <div class="start-divider"></div>
           <ul class="start-list">
-            <li>FastAPI with API key auth</li>
-            <li>Ollama or OpenAI agent loop</li>
-            <li>Automatic message embedding</li>
-            <li>Prompt injection guards built in</li>
+            <li>Single-process API with one admin key</li>
+            <li>Ollama on localhost by default</li>
+            <li>OpenAI sends content off-machine</li>
+            <li>First embedding use downloads a model</li>
           </ul>
-          <a href="https://github.com/sajadxdp0/neudb/blob/main/README.md" class="btn btn-outline" target="_blank" rel="noopener">Read setup guide</a>
+          <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/api.md" class="btn btn-outline" target="_blank" rel="noopener">Read setup guide</a>
         </article>
       </div>
+    </section>
+
+    <section class="share-section reveal" aria-labelledby="share-heading">
+      <h2 id="share-heading">Share neuDB</h2>
+      <details>
+        <summary>Hashtags and topics</summary>
+        <p id="hashtags">#neuDB #Python #Database #JSON #VectorSearch #AIMemory #LLM #OpenSource #EmbeddedDatabase #DeveloperTools</p>
+        <button type="button" class="btn btn-outline" data-copy="#hashtags">Copy hashtags</button>
+      </details>
     </section>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
-      <a href="#" class="logo">
+      <a href="#" class="logo" aria-label="neuDB home">
         <img src="assets/logo.svg" alt="neuDB" class="logo-wordmark" height="18">
       </a>
       <nav class="footer-links" aria-label="Footer">
         <a href="https://github.com/sajadxdp0/neudb" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/sajadxdp0/neudb/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
-        <a href="https://github.com/sajadxdp0/neudb/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/cli.md" target="_blank" rel="noopener">CLI docs</a>
+        <a href="https://github.com/sajadxdp0/neudb/blob/main/docs/api.md" target="_blank" rel="noopener">API docs</a>
         <a href="https://github.com/sajadxdp0/neudb/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>
       </nav>
       <p class="footer-copy">© Abdulla Sajad</p>

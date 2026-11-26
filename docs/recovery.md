@@ -1,20 +1,35 @@
 # neuDB failure recovery
 
-Source: `neudb/__init__.py: Table._save, Table._read_file, Table.sweep_orphan_tmps`.
+Sources: `neudb/storage.py` and `neudb/table.py`.
 
-* Interrupted write: temp file + `os.replace` means the original table file is
-  either fully old or fully new. A crash leaves at most a stray
-  `.{table}.*.tmp` file. It is harmless (reads ignore it) and removed by an
-  explicit `Table.sweep_orphan_tmps()` maintenance call — deliberately NOT on
-  open, because a live concurrent writer may own a temp with the same pattern
-  (deleting it mid-write breaks that writer's `os.replace`; caught by
-  `tests/test_concurrency.py` during development).
-* Corrupted data: `_read_file` raises `CorruptedTableError` (a `ValueError`
-  carrying `.path`) on invalid JSON / non-UTF-8 / non-object top level —
-  instead of a bare `json.load` traceback. No checksum, no backup rotation, no
-  repair command. Restore from a directory backup (plain files).
-* Operational guidance: back up the database directory; validate with
-  `python -m json.tool <table>.json` before/after copies.
-* Tests: `tests/test_recovery.py` (corruption, non-object, interrupted write +
-  explicit sweep, duplicate-id semantics). Still missing: power-loss torture,
-  backup/restore round-trip.
+## Interrupted writes
+
+A table mutation writes a sibling `.<table>.json.*.tmp` file and then replaces the table file. An interruption before replacement leaves the previous table intact. An interruption after replacement leaves the new complete table. A crash can leave a stale temporary file, but reads ignore it.
+
+Temporary files are not removed on open because another process could own one. Call `table.sweep_orphan_tmps(max_age_seconds=300)` explicitly while no other process is writing the directory. The method holds the same-process path lock and removes only matching files at least as old as the supplied age.
+
+## Directory fsync and ambiguous errors
+
+After `os.replace()`, neuDB fsyncs the parent directory on supporting POSIX filesystems so the rename can be persisted. Unsupported directory fsync is skipped. If a later fsync raises after replacement, the write may already be committed; neuDB surfaces the error. Reload the table before retrying an ambiguous write.
+
+Atomic replacement prevents half-written JSON; it does not create a backup or guarantee survival of every power-loss or hardware failure.
+
+## Corrupt or invalid data
+
+`read_table_file()` raises `CorruptedTableError` for:
+
+- invalid JSON or non-UTF-8 content;
+- a top-level value that is not an object;
+- invalid records, unsupported JSON values, or invalid IDs;
+- a record whose `id` does not match its table key.
+
+There is no automatic repair, checksum verification, backup rotation, or restore command. Stop writers, preserve the damaged files for diagnosis, and restore the table or database directory from your own backup.
+
+## Operational guidance
+
+- Back up the whole database directory while no process is writing it: `cp -r neudb_data neudb_data.backup`.
+- Validate a copied table with `python -m json.tool neudb_data.backup/notes.json`.
+- Treat a directory copy as a filesystem backup, not a transactional snapshot across tables.
+- Sweep stale temp files only after confirming that no writer is active.
+
+The test suite covers corruption handling, temp-file sweeping, and interrupted-write behavior. Power-loss torture tests and automated backup/restore tooling are not provided.

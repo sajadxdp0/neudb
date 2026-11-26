@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">neuDB — storage you can read</title>
+  <desc id="desc">Inspectable embedded Python storage with atomic JSON tables, text search, and vector search.</desc>
+  <defs>
+    <radialGradient id="glow" cx="78%" cy="36%" r="55%">
+      <stop offset="0" stop-color="#8B7BFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#8B7BFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0B0B0E"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(76 58)">
+    <rect x="0" y="0" width="46" height="46" rx="13" fill="none" stroke="#F7F7F8" stroke-width="2.7"/>
+    <path d="M13 35V21c0-5.2 4-8.2 8.8-8.2S31 15.8 31 21v14" fill="none" stroke="#F7F7F8" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M13 27h18" stroke="#8B7BFF" stroke-width="2.7" stroke-linecap="round"/>
+    <circle cx="38" cy="27" r="3.2" fill="#8B7BFF"/>
+    <text x="62" y="33" fill="#F7F7F8" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="29" font-weight="600" letter-spacing="-1.2">neuDB</text>
+  </g>
+  <text x="76" y="236" fill="#F7F7F8" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="66" font-weight="600" letter-spacing="-3.2">Storage you can read.</text>
+  <text x="78" y="302" fill="#B7B7C2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="29" letter-spacing="-0.6">Inspectable embedded Python storage</text>
+  <text x="78" y="340" fill="#B7B7C2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="29" letter-spacing="-0.6">with atomic JSON tables, text search,</text>
+  <text x="78" y="378" fill="#B7B7C2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="29" letter-spacing="-0.6">and vector search.</text>
+  <g transform="translate(78 434)">
+    <rect width="453" height="60" rx="30" fill="#15151B" stroke="#303039"/>
+    <circle cx="30" cy="30" r="5" fill="#8B7BFF"/>
+    <text x="48" y="38" fill="#E7E7EC" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20" font-weight="500">JSON tables · text search · vectors</text>
+  </g>
+  <g transform="translate(787 146)">
+    <rect x="18" y="28" width="320" height="304" rx="20" fill="#111116" stroke="#24242D"/>
+    <text x="44" y="69" fill="#777784" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">messages.json</text>
+    <path d="M44 91h268" stroke="#24242D"/>
+    <text x="44" y="127" fill="#8B7BFF" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"id": "msg-7f2a",</text>
+    <text x="44" y="157" fill="#D5D5DE" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"content": "remember this",</text>
+    <text x="44" y="187" fill="#D5D5DE" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"embedding": [0.12,</text>
+    <text x="44" y="217" fill="#D5D5DE" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">  0.84, -0.31]</text>
+    <text x="44" y="257" fill="#777784" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">}</text>
+  </g>
+  <g transform="translate(742 188)">
+    <rect width="320" height="304" rx="20" fill="#17171E" stroke="url(#edge)"/>
+    <text x="26" y="41" fill="#A4A4B1" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">notes.json</text>
+    <path d="M26 63h268" stroke="#30303A"/>
+    <text x="26" y="99" fill="#8B7BFF" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"id": "note-1",</text>
+    <text x="26" y="129" fill="#EDEDF2" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"title": "Python setup",</text>
+    <text x="26" y="159" fill="#EDEDF2" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"done": false,</text>
+    <text x="26" y="189" fill="#EDEDF2" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">"tags": ["local",</text>
+    <text x="26" y="219" fill="#EDEDF2" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">  "inspectable"]</text>
+    <text x="26" y="259" fill="#777784" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">}</text>
+  </g>
+  <text x="76" y="574" fill="#858593" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17">Local tools · prototypes · LLM-agent memory</text>
+  <text x="1124" y="574" text-anchor="end" fill="#858593" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17">Python 3.11+ · MIT</text>
+</svg>

@@ -1,4 +1,5 @@
-from neudb import cosine_similarity, connect
+import pytest
+from neudb import connect, cosine_similarity
 
 
 def test_cosine_similarity_with_matching_and_zero_vectors():
@@ -59,3 +60,33 @@ def test_search_text_honors_top_k_and_empty_query(tmp_path):
 
     assert [record["id"] for record in messages.search_text("content", "python", top_k=1)] == [first_id]
     assert messages.search_text("content", "") == []
+
+
+@pytest.mark.parametrize(
+    "vector",
+    [[float("nan")], [float("inf")], ["1"], [True], ["not-a-number"]],
+)
+def test_cosine_similarity_rejects_invalid_vector_values(vector):
+    with pytest.raises(ValueError, match="finite numbers"):
+        cosine_similarity(vector, [1.0])
+
+
+def test_cosine_similarity_is_stable_for_large_finite_values():
+    assert cosine_similarity([1e308, 1e308], [1e308, 1e308]) == pytest.approx(1.0)
+
+
+def test_vector_search_skips_malformed_stored_vectors(tmp_path):
+    table = connect(str(tmp_path)).table("messages")
+    valid_id = table.insert_with_embedding({"content": "valid"}, [1.0, 0.0])
+    table.insert({"content": "invalid", "embedding": ["not-a-number"]})
+
+    results = table.search_similar("embedding", [1.0, 0.0])
+
+    assert [record["id"] for record in results] == [valid_id]
+
+
+def test_insert_with_embedding_rejects_invalid_vectors(tmp_path):
+    table = connect(str(tmp_path)).table("messages")
+
+    with pytest.raises(ValueError, match="finite numbers"):
+        table.insert_with_embedding({"content": "invalid"}, ["not-a-number"])
